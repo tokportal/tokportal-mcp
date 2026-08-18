@@ -1,0 +1,37 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        node-version: [20, 22]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+      - run: npm install
+      - run: npm run build
+      - name: Smoke test (tools/list over stdio)
+        env:
+          TOKPORTAL_API_KEY: sk_0000000000000000000000000000000000000000000000000000000000000000
+        run: |
+          cat > smoke.mjs <<'JS'
+          import { Client } from "@modelcontextprotocol/sdk/client/index.js";
+          import { StdioClientTransport } from "@modelcontextprotocol/sdk/client/stdio.js";
+          const client = new Client({ name: "ci", version: "0.0.0" });
+          await client.connect(new StdioClientTransport({ command: process.execPath, args: ["dist/index.js"], env: process.env }));
+          const { tools } = await client.listTools();
+          if (tools.length < 50) throw new Error(`unexpected tool count ${tools.length}`);
+          const ro = tools.find((t) => t.name === "tokportal_get_current_user");
+          if (!ro?.annotations?.readOnlyHint) throw new Error("missing readOnlyHint annotation");
+          console.log(`ok: ${tools.length} tools`);
+          await client.close();
+          JS
+          node smoke.mjs

@@ -1,0 +1,58 @@
+{
+  "name": "tokportal-mcp",
+  "version": "1.12.1",
+  "description": "Public MCP server for the TokPortal API.",
+  "mcpName": "com.tokportal/mcp",
+  "homepage": "https://developers.tokportal.com/sdks-cli",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/tokportal/tokportal-mcp.git"
+  },
+  "bugs": {
+    "url": "https://github.com/tokportal/tokportal-mcp/issues"
+  },
+  "license": "MIT",
+  "type": "module",
+  "bin": {
+    "tokportal-mcp": "dist/index.js"
+  },
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "files": [
+    "LICENSE",
+    "README.md",
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit"
+  },
+  "keywords": [
+    "mcp",
+    "mcp-server",
+    "model-context-protocol",
+    "tiktok",
+    "instagram",
+    "youtube",
+    "social-media",
+    "api",
+    "ai-agents",
+    "automation",
+    "sdk",
+    "tokportal"
+  ],
+  "publishConfig": {
+    "access": "public",
+    "provenance": true
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.30.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20",
+    "typescript": "^5"
+  }
+}
