@@ -5,7 +5,7 @@
 
 TokPortal is the managed social infrastructure API: real TikTok, Instagram and YouTube accounts created, warmed and operated by human account managers in 16+ countries — exposed as a REST API and an MCP server. No OAuth per account, no 25-posts/day cap, no app review.
 
-Docs https://developers.tokportal.com · API base https://app.tokportal.com/api/ext · OpenAPI https://developers.tokportal.com/openapi.json · MCP remote https://app.tokportal.com/api/ext/mcp · Get an API key https://app.tokportal.com/developer/api-keys · llms.txt https://developers.tokportal.com/llms.txt
+Docs https://developers.tokportal.com · API base https://app.tokportal.com/api/ext · OpenAPI https://developers.tokportal.com/openapi.json · MCP remote https://app.tokportal.com/api/ext/mcp · Get an API key https://app.tokportal.com/developer/api-keys?utm_source=npm&utm_medium=readme&utm_campaign=tokportal-mcp · llms.txt https://developers.tokportal.com/llms.txt
 
 ---
 
@@ -18,7 +18,7 @@ Two ways to use it:
 | **Local** (`npx tokportal-mcp`) | stdio | Desktop clients, local agents, file uploads from disk |
 | **Remote** (`https://app.tokportal.com/api/ext/mcp`) | Streamable HTTP | Hosted agents, no install; same tool catalogue |
 
-Requires Node.js 20 or newer. The local server runs on it directly. Get an API key at https://app.tokportal.com/developer/api-keys (format `sk_` + 64 hex chars).
+Requires Node.js 20 or newer. The local server runs on it directly. Get an API key at https://app.tokportal.com/developer/api-keys?utm_source=npm&utm_medium=readme&utm_campaign=tokportal-mcp (format `sk_` + 64 hex chars).
 
 ## 30-second quickstart
 
@@ -190,7 +190,7 @@ The server exposes TokPortal API actions as MCP tools over stdio. It is generate
 - Multipart upload tools are generated from OpenAPI too. Binary fields are exposed as local path inputs such as `file_path`, with the remaining form fields exposed by their schema names.
 - Mutations accept an optional `idempotency_key` (sent as `Idempotency-Key`) except for secret-bearing operations (credential reveal, verification codes, webhook creation, signed upload URLs, report creation) which are never replayed.
 
-The MCP server sends `X-TokPortal-Client: tokportal-mcp/1.14.1` on API requests for observability and support diagnostics.
+The MCP server sends `X-TokPortal-Client: tokportal-mcp/1.14.2` on API requests for observability and support diagnostics.
 
 Failed tool calls return an error result with a `diagnostics` object containing `request_id`, `retry_after_seconds`, and `rate_limit` when those headers are available.
 
