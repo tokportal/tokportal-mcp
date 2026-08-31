@@ -14,7 +14,7 @@ import {
   type McpToolDefinition,
 } from "./generated.js";
 
-const TOKPORTAL_MCP_VERSION = "1.12.1";
+const TOKPORTAL_MCP_VERSION = "1.14.0";
 const TOKPORTAL_CLIENT_HEADER = `tokportal-mcp/${TOKPORTAL_MCP_VERSION}`;
 
 const apiKey = process.env.TOKPORTAL_API_KEY;
@@ -140,6 +140,16 @@ function jsonBodyArgumentNames(tool: McpToolDefinition): Set<string> {
   return new Set(Object.keys(inputProperties?.body?.properties || {}));
 }
 
+/**
+ * Top-level argument names the generated inputSchema declares: the path params,
+ * the query params, `body`, and `idempotency_key`.
+ */
+function declaredArgumentNames(tool: McpToolDefinition): Set<string> {
+  const properties = (tool.inputSchema as { properties?: Record<string, unknown> })
+    .properties;
+  return new Set(Object.keys(properties || {}));
+}
+
 function splitArgs(tool: McpToolDefinition, args: Record<string, unknown>) {
   const pathParamNames = [...tool.path.matchAll(/\{([^}]+)\}/g)].map(
     (match) => match[1],
@@ -165,6 +175,14 @@ function splitArgs(tool: McpToolDefinition, args: Record<string, unknown>) {
         : undefined;
   const query: Record<string, string> = {};
 
+  // Kept identical to app/api/_lib/mcp-server.ts::splitArgs. This loop used to
+  // turn EVERY leftover argument into a query-string parameter, so an
+  // unrecognised or misspelled top-level argument was appended to the URL of a
+  // POST/PUT, ignored by the handler, and answered 200. Enforce the
+  // `additionalProperties: false` the tool already publishes.
+  const declared = declaredArgumentNames(tool);
+  const unknownArgs: string[] = [];
+
   for (const [key, value] of Object.entries(args)) {
     if (
       key === "body" ||
@@ -174,7 +192,23 @@ function splitArgs(tool: McpToolDefinition, args: Record<string, unknown>) {
       bodyArgNames.has(key)
     )
       continue;
+    if (!declared.has(key)) {
+      unknownArgs.push(key);
+      continue;
+    }
     if (value !== undefined && value !== null) query[key] = String(value);
+  }
+
+  if (unknownArgs.length > 0) {
+    const accepted = [...declared].sort().join(", ") || "(none)";
+    throw new Error(
+      `Tool "${tool.name}" does not accept the argument(s): ` +
+        `${unknownArgs.join(", ")}. Accepted top-level arguments: ${accepted}. ` +
+        (bodyArgNames.size > 0
+          ? "Request fields belong inside the `body` object — check the spelling against the tool's inputSchema and re-send. "
+          : "") +
+        "TokPortal refuses unknown arguments rather than dropping them, because a dropped field on a full-replace write erases the value it was meant to set.",
+    );
   }
 
   return {
