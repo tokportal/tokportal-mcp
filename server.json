@@ -3,7 +3,7 @@
   "name": "com.tokportal/mcp",
   "title": "TokPortal",
   "description": "Managed TikTok/Instagram/YouTube accounts + video posting at scale, operated by human managers.",
-  "version": "1.14.2",
+  "version": "1.15.0",
   "websiteUrl": "https://developers.tokportal.com/mcp",
   "repository": {
     "url": "https://github.com/tokportal/tokportal-mcp",
@@ -20,7 +20,7 @@
       "registryType": "npm",
       "registryBaseUrl": "https://registry.npmjs.org",
       "identifier": "tokportal-mcp",
-      "version": "1.14.2",
+      "version": "1.15.0",
       "transport": {
         "type": "stdio"
       },

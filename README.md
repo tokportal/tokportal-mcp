@@ -190,7 +190,7 @@ The server exposes TokPortal API actions as MCP tools over stdio. It is generate
 - Multipart upload tools are generated from OpenAPI too. Binary fields are exposed as local path inputs such as `file_path`, with the remaining form fields exposed by their schema names.
 - Mutations accept an optional `idempotency_key` (sent as `Idempotency-Key`) except for secret-bearing operations (credential reveal, verification codes, webhook creation, signed upload URLs, report creation) which are never replayed.
 
-The MCP server sends `X-TokPortal-Client: tokportal-mcp/1.14.2` on API requests for observability and support diagnostics.
+The MCP server sends `X-TokPortal-Client: tokportal-mcp/1.15.0` on API requests for observability and support diagnostics.
 
 Failed tool calls return an error result with a `diagnostics` object containing `request_id`, `retry_after_seconds`, and `rate_limit` when those headers are available.
 

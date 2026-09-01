@@ -105,6 +105,10 @@ export const TOOLS: McpToolDefinition[] = [
         "idempotency_key": {
           "type": "string",
           "description": "Optional Idempotency-Key header for safe retries."
+        },
+        "dry_run": {
+          "type": "boolean",
+          "description": "Simulate this call: full validation and the real price, but nothing is created, no credits are debited, and no Idempotency-Key is consumed. Returned identifiers are synthetic and only usable in other dry-run calls."
         }
       },
       "required": [
@@ -198,6 +202,10 @@ export const TOOLS: McpToolDefinition[] = [
         "idempotency_key": {
           "type": "string",
           "description": "Optional Idempotency-Key header for safe retries."
+        },
+        "dry_run": {
+          "type": "boolean",
+          "description": "Simulate this call: full validation and the real price, but nothing is created, no credits are debited, and no Idempotency-Key is consumed. Returned identifiers are synthetic and only usable in other dry-run calls."
         }
       },
       "required": [
@@ -233,6 +241,10 @@ export const TOOLS: McpToolDefinition[] = [
         "idempotency_key": {
           "type": "string",
           "description": "Optional Idempotency-Key header for safe retries."
+        },
+        "dry_run": {
+          "type": "boolean",
+          "description": "Simulate this call: full validation and the real price, but nothing is created, no credits are debited, and no Idempotency-Key is consumed. Returned identifiers are synthetic and only usable in other dry-run calls."
         }
       },
       "required": [
@@ -584,6 +596,10 @@ export const TOOLS: McpToolDefinition[] = [
         "idempotency_key": {
           "type": "string",
           "description": "Optional Idempotency-Key header for safe retries."
+        },
+        "dry_run": {
+          "type": "boolean",
+          "description": "Simulate this call: full validation and the real price, but nothing is created, no credits are debited, and no Idempotency-Key is consumed. Returned identifiers are synthetic and only usable in other dry-run calls."
         }
       },
       "required": [
@@ -738,6 +754,10 @@ export const TOOLS: McpToolDefinition[] = [
         "idempotency_key": {
           "type": "string",
           "description": "Optional Idempotency-Key header for safe retries."
+        },
+        "dry_run": {
+          "type": "boolean",
+          "description": "Simulate this call: full validation and the real price, but nothing is created, no credits are debited, and no Idempotency-Key is consumed. Returned identifiers are synthetic and only usable in other dry-run calls."
         }
       },
       "required": [
@@ -827,6 +847,10 @@ export const TOOLS: McpToolDefinition[] = [
         "idempotency_key": {
           "type": "string",
           "description": "Optional Idempotency-Key header for safe retries."
+        },
+        "dry_run": {
+          "type": "boolean",
+          "description": "Simulate this call: full validation and the real price, but nothing is created, no credits are debited, and no Idempotency-Key is consumed. Returned identifiers are synthetic and only usable in other dry-run calls."
         }
       },
       "required": [
@@ -862,6 +886,10 @@ export const TOOLS: McpToolDefinition[] = [
         "idempotency_key": {
           "type": "string",
           "description": "Optional Idempotency-Key header for safe retries."
+        },
+        "dry_run": {
+          "type": "boolean",
+          "description": "Simulate this call: full validation and the real price, but nothing is created, no credits are debited, and no Idempotency-Key is consumed. Returned identifiers are synthetic and only usable in other dry-run calls."
         }
       },
       "required": [
@@ -926,6 +954,10 @@ export const TOOLS: McpToolDefinition[] = [
         "idempotency_key": {
           "type": "string",
           "description": "Optional Idempotency-Key header for safe retries."
+        },
+        "dry_run": {
+          "type": "boolean",
+          "description": "Simulate this call: full validation and the real price, but nothing is created, no credits are debited, and no Idempotency-Key is consumed. Returned identifiers are synthetic and only usable in other dry-run calls."
         }
       },
       "required": [
@@ -976,6 +1008,10 @@ export const TOOLS: McpToolDefinition[] = [
         "idempotency_key": {
           "type": "string",
           "description": "Optional Idempotency-Key header for safe retries."
+        },
+        "dry_run": {
+          "type": "boolean",
+          "description": "Simulate this call: full validation and the real price, but nothing is created, no credits are debited, and no Idempotency-Key is consumed. Returned identifiers are synthetic and only usable in other dry-run calls."
         }
       },
       "required": [
@@ -1027,6 +1063,10 @@ export const TOOLS: McpToolDefinition[] = [
         "idempotency_key": {
           "type": "string",
           "description": "Optional Idempotency-Key header for safe retries."
+        },
+        "dry_run": {
+          "type": "boolean",
+          "description": "Simulate this call: full validation and the real price, but nothing is created, no credits are debited, and no Idempotency-Key is consumed. Returned identifiers are synthetic and only usable in other dry-run calls."
         }
       },
       "required": [
@@ -1148,6 +1188,10 @@ export const TOOLS: McpToolDefinition[] = [
         "idempotency_key": {
           "type": "string",
           "description": "Optional Idempotency-Key header for safe retries."
+        },
+        "dry_run": {
+          "type": "boolean",
+          "description": "Simulate this call: full validation and the real price, but nothing is created, no credits are debited, and no Idempotency-Key is consumed. Returned identifiers are synthetic and only usable in other dry-run calls."
         }
       },
       "required": [
@@ -1241,6 +1285,10 @@ export const TOOLS: McpToolDefinition[] = [
         "idempotency_key": {
           "type": "string",
           "description": "Optional Idempotency-Key header for safe retries."
+        },
+        "dry_run": {
+          "type": "boolean",
+          "description": "Simulate this call: full validation and the real price, but nothing is created, no credits are debited, and no Idempotency-Key is consumed. Returned identifiers are synthetic and only usable in other dry-run calls."
         }
       },
       "required": [
@@ -1287,6 +1335,10 @@ export const TOOLS: McpToolDefinition[] = [
         "idempotency_key": {
           "type": "string",
           "description": "Optional Idempotency-Key header for safe retries."
+        },
+        "dry_run": {
+          "type": "boolean",
+          "description": "Simulate this call: full validation and the real price, but nothing is created, no credits are debited, and no Idempotency-Key is consumed. Returned identifiers are synthetic and only usable in other dry-run calls."
         }
       },
       "required": [
@@ -1565,6 +1617,10 @@ export const TOOLS: McpToolDefinition[] = [
         "idempotency_key": {
           "type": "string",
           "description": "Optional Idempotency-Key header for safe retries."
+        },
+        "dry_run": {
+          "type": "boolean",
+          "description": "Simulate this call: full validation and the real price, but nothing is created, no credits are debited, and no Idempotency-Key is consumed. Returned identifiers are synthetic and only usable in other dry-run calls."
         }
       },
       "required": [
@@ -1659,6 +1715,10 @@ export const TOOLS: McpToolDefinition[] = [
         "idempotency_key": {
           "type": "string",
           "description": "Optional Idempotency-Key header for safe retries."
+        },
+        "dry_run": {
+          "type": "boolean",
+          "description": "Simulate this call: full validation and the real price, but nothing is created, no credits are debited, and no Idempotency-Key is consumed. Returned identifiers are synthetic and only usable in other dry-run calls."
         }
       },
       "required": [
@@ -1889,6 +1949,10 @@ export const TOOLS: McpToolDefinition[] = [
         "idempotency_key": {
           "type": "string",
           "description": "Optional Idempotency-Key header for safe retries."
+        },
+        "dry_run": {
+          "type": "boolean",
+          "description": "Simulate this call: full validation and the real price, but nothing is created, no credits are debited, and no Idempotency-Key is consumed. Returned identifiers are synthetic and only usable in other dry-run calls."
         }
       },
       "required": [
@@ -1924,6 +1988,10 @@ export const TOOLS: McpToolDefinition[] = [
         "idempotency_key": {
           "type": "string",
           "description": "Optional Idempotency-Key header for safe retries."
+        },
+        "dry_run": {
+          "type": "boolean",
+          "description": "Simulate this call: full validation and the real price, but nothing is created, no credits are debited, and no Idempotency-Key is consumed. Returned identifiers are synthetic and only usable in other dry-run calls."
         }
       },
       "required": [
@@ -1987,6 +2055,10 @@ export const TOOLS: McpToolDefinition[] = [
         "idempotency_key": {
           "type": "string",
           "description": "Optional Idempotency-Key header for safe retries."
+        },
+        "dry_run": {
+          "type": "boolean",
+          "description": "Simulate this call: full validation and the real price, but nothing is created, no credits are debited, and no Idempotency-Key is consumed. Returned identifiers are synthetic and only usable in other dry-run calls."
         }
       },
       "required": [
@@ -2027,6 +2099,10 @@ export const TOOLS: McpToolDefinition[] = [
         "idempotency_key": {
           "type": "string",
           "description": "Optional Idempotency-Key header for safe retries."
+        },
+        "dry_run": {
+          "type": "boolean",
+          "description": "Simulate this call: full validation and the real price, but nothing is created, no credits are debited, and no Idempotency-Key is consumed. Returned identifiers are synthetic and only usable in other dry-run calls."
         }
       },
       "required": [
@@ -2067,6 +2143,10 @@ export const TOOLS: McpToolDefinition[] = [
         "idempotency_key": {
           "type": "string",
           "description": "Optional Idempotency-Key header for safe retries."
+        },
+        "dry_run": {
+          "type": "boolean",
+          "description": "Simulate this call: full validation and the real price, but nothing is created, no credits are debited, and no Idempotency-Key is consumed. Returned identifiers are synthetic and only usable in other dry-run calls."
         }
       },
       "required": [
@@ -2107,6 +2187,10 @@ export const TOOLS: McpToolDefinition[] = [
         "idempotency_key": {
           "type": "string",
           "description": "Optional Idempotency-Key header for safe retries."
+        },
+        "dry_run": {
+          "type": "boolean",
+          "description": "Simulate this call: full validation and the real price, but nothing is created, no credits are debited, and no Idempotency-Key is consumed. Returned identifiers are synthetic and only usable in other dry-run calls."
         }
       },
       "required": [
@@ -2147,6 +2231,10 @@ export const TOOLS: McpToolDefinition[] = [
         "idempotency_key": {
           "type": "string",
           "description": "Optional Idempotency-Key header for safe retries."
+        },
+        "dry_run": {
+          "type": "boolean",
+          "description": "Simulate this call: full validation and the real price, but nothing is created, no credits are debited, and no Idempotency-Key is consumed. Returned identifiers are synthetic and only usable in other dry-run calls."
         }
       },
       "required": [
@@ -2245,6 +2333,10 @@ export const TOOLS: McpToolDefinition[] = [
         "idempotency_key": {
           "type": "string",
           "description": "Optional Idempotency-Key header for safe retries."
+        },
+        "dry_run": {
+          "type": "boolean",
+          "description": "Simulate this call: full validation and the real price, but nothing is created, no credits are debited, and no Idempotency-Key is consumed. Returned identifiers are synthetic and only usable in other dry-run calls."
         }
       },
       "required": [
@@ -2329,6 +2421,10 @@ export const TOOLS: McpToolDefinition[] = [
         "idempotency_key": {
           "type": "string",
           "description": "Optional Idempotency-Key header for safe retries."
+        },
+        "dry_run": {
+          "type": "boolean",
+          "description": "Simulate this call: full validation and the real price, but nothing is created, no credits are debited, and no Idempotency-Key is consumed. Returned identifiers are synthetic and only usable in other dry-run calls."
         }
       },
       "required": [
@@ -2582,6 +2678,10 @@ export const TOOLS: McpToolDefinition[] = [
         "idempotency_key": {
           "type": "string",
           "description": "Optional Idempotency-Key header for safe retries."
+        },
+        "dry_run": {
+          "type": "boolean",
+          "description": "Simulate this call: full validation and the real price, but nothing is created, no credits are debited, and no Idempotency-Key is consumed. Returned identifiers are synthetic and only usable in other dry-run calls."
         }
       },
       "required": [
@@ -2684,6 +2784,10 @@ export const TOOLS: McpToolDefinition[] = [
             }
           },
           "additionalProperties": false
+        },
+        "dry_run": {
+          "type": "boolean",
+          "description": "Simulate this call: full validation and the real price, but nothing is created, no credits are debited, and no Idempotency-Key is consumed. Returned identifiers are synthetic and only usable in other dry-run calls."
         }
       },
       "required": [
@@ -2738,6 +2842,10 @@ export const TOOLS: McpToolDefinition[] = [
             }
           },
           "additionalProperties": false
+        },
+        "dry_run": {
+          "type": "boolean",
+          "description": "Simulate this call: full validation and the real price, but nothing is created, no credits are debited, and no Idempotency-Key is consumed. Returned identifiers are synthetic and only usable in other dry-run calls."
         }
       },
       "required": [
@@ -2837,6 +2945,10 @@ export const TOOLS: McpToolDefinition[] = [
         "idempotency_key": {
           "type": "string",
           "description": "Optional Idempotency-Key header for safe retries."
+        },
+        "dry_run": {
+          "type": "boolean",
+          "description": "Simulate this call: full validation and the real price, but nothing is created, no credits are debited, and no Idempotency-Key is consumed. Returned identifiers are synthetic and only usable in other dry-run calls."
         }
       },
       "required": [
@@ -2955,6 +3067,10 @@ export const TOOLS: McpToolDefinition[] = [
         "idempotency_key": {
           "type": "string",
           "description": "Optional Idempotency-Key header for safe retries."
+        },
+        "dry_run": {
+          "type": "boolean",
+          "description": "Simulate this call: full validation and the real price, but nothing is created, no credits are debited, and no Idempotency-Key is consumed. Returned identifiers are synthetic and only usable in other dry-run calls."
         }
       },
       "required": [
@@ -3012,6 +3128,10 @@ export const TOOLS: McpToolDefinition[] = [
         "idempotency_key": {
           "type": "string",
           "description": "Optional Idempotency-Key header for safe retries."
+        },
+        "dry_run": {
+          "type": "boolean",
+          "description": "Simulate this call: full validation and the real price, but nothing is created, no credits are debited, and no Idempotency-Key is consumed. Returned identifiers are synthetic and only usable in other dry-run calls."
         }
       },
       "required": [
@@ -3069,6 +3189,10 @@ export const TOOLS: McpToolDefinition[] = [
         "idempotency_key": {
           "type": "string",
           "description": "Optional Idempotency-Key header for safe retries."
+        },
+        "dry_run": {
+          "type": "boolean",
+          "description": "Simulate this call: full validation and the real price, but nothing is created, no credits are debited, and no Idempotency-Key is consumed. Returned identifiers are synthetic and only usable in other dry-run calls."
         }
       },
       "required": [
@@ -3193,6 +3317,10 @@ export const TOOLS: McpToolDefinition[] = [
         "idempotency_key": {
           "type": "string",
           "description": "Optional Idempotency-Key header for safe retries."
+        },
+        "dry_run": {
+          "type": "boolean",
+          "description": "Simulate this call: full validation and the real price, but nothing is created, no credits are debited, and no Idempotency-Key is consumed. Returned identifiers are synthetic and only usable in other dry-run calls."
         }
       },
       "required": [
@@ -3347,6 +3475,10 @@ export const TOOLS: McpToolDefinition[] = [
           },
           "additionalProperties": false,
           "description": "JSON request body."
+        },
+        "dry_run": {
+          "type": "boolean",
+          "description": "Simulate this call: full validation and the real price, but nothing is created, no credits are debited, and no Idempotency-Key is consumed. Returned identifiers are synthetic and only usable in other dry-run calls."
         }
       },
       "required": [
@@ -3474,6 +3606,10 @@ export const TOOLS: McpToolDefinition[] = [
         "idempotency_key": {
           "type": "string",
           "description": "Optional Idempotency-Key header for safe retries."
+        },
+        "dry_run": {
+          "type": "boolean",
+          "description": "Simulate this call: full validation and the real price, but nothing is created, no credits are debited, and no Idempotency-Key is consumed. Returned identifiers are synthetic and only usable in other dry-run calls."
         }
       },
       "required": [
@@ -3509,6 +3645,10 @@ export const TOOLS: McpToolDefinition[] = [
         "idempotency_key": {
           "type": "string",
           "description": "Optional Idempotency-Key header for safe retries."
+        },
+        "dry_run": {
+          "type": "boolean",
+          "description": "Simulate this call: full validation and the real price, but nothing is created, no credits are debited, and no Idempotency-Key is consumed. Returned identifiers are synthetic and only usable in other dry-run calls."
         }
       },
       "required": [
@@ -3599,6 +3739,10 @@ export const TOOLS: McpToolDefinition[] = [
         "idempotency_key": {
           "type": "string",
           "description": "Optional Idempotency-Key header for safe retries."
+        },
+        "dry_run": {
+          "type": "boolean",
+          "description": "Simulate this call: full validation and the real price, but nothing is created, no credits are debited, and no Idempotency-Key is consumed. Returned identifiers are synthetic and only usable in other dry-run calls."
         }
       },
       "required": [
@@ -3634,6 +3778,10 @@ export const TOOLS: McpToolDefinition[] = [
         "idempotency_key": {
           "type": "string",
           "description": "Optional Idempotency-Key header for safe retries."
+        },
+        "dry_run": {
+          "type": "boolean",
+          "description": "Simulate this call: full validation and the real price, but nothing is created, no credits are debited, and no Idempotency-Key is consumed. Returned identifiers are synthetic and only usable in other dry-run calls."
         }
       },
       "required": [
@@ -3683,6 +3831,10 @@ export const TOOLS: McpToolDefinition[] = [
           },
           "additionalProperties": false,
           "description": "JSON request body."
+        },
+        "dry_run": {
+          "type": "boolean",
+          "description": "Simulate this call: full validation and the real price, but nothing is created, no credits are debited, and no Idempotency-Key is consumed. Returned identifiers are synthetic and only usable in other dry-run calls."
         }
       },
       "required": [
@@ -3740,6 +3892,10 @@ export const TOOLS: McpToolDefinition[] = [
         "idempotency_key": {
           "type": "string",
           "description": "Optional Idempotency-Key header for safe retries."
+        },
+        "dry_run": {
+          "type": "boolean",
+          "description": "Simulate this call: full validation and the real price, but nothing is created, no credits are debited, and no Idempotency-Key is consumed. Returned identifiers are synthetic and only usable in other dry-run calls."
         }
       },
       "required": [
@@ -3804,6 +3960,10 @@ export const TOOLS: McpToolDefinition[] = [
           },
           "additionalProperties": false,
           "description": "JSON request body."
+        },
+        "dry_run": {
+          "type": "boolean",
+          "description": "Simulate this call: full validation and the real price, but nothing is created, no credits are debited, and no Idempotency-Key is consumed. Returned identifiers are synthetic and only usable in other dry-run calls."
         }
       },
       "required": [
@@ -3883,6 +4043,10 @@ export const TOOLS: McpToolDefinition[] = [
         "idempotency_key": {
           "type": "string",
           "description": "Optional Idempotency-Key header for safe retries."
+        },
+        "dry_run": {
+          "type": "boolean",
+          "description": "Simulate this call: full validation and the real price, but nothing is created, no credits are debited, and no Idempotency-Key is consumed. Returned identifiers are synthetic and only usable in other dry-run calls."
         }
       },
       "required": [
@@ -3941,6 +4105,10 @@ export const TOOLS: McpToolDefinition[] = [
         "idempotency_key": {
           "type": "string",
           "description": "Optional Idempotency-Key header for safe retries."
+        },
+        "dry_run": {
+          "type": "boolean",
+          "description": "Simulate this call: full validation and the real price, but nothing is created, no credits are debited, and no Idempotency-Key is consumed. Returned identifiers are synthetic and only usable in other dry-run calls."
         }
       },
       "required": [
@@ -4202,6 +4370,10 @@ export const TOOLS: McpToolDefinition[] = [
           },
           "additionalProperties": false,
           "description": "JSON request body."
+        },
+        "dry_run": {
+          "type": "boolean",
+          "description": "Simulate this call: full validation and the real price, but nothing is created, no credits are debited, and no Idempotency-Key is consumed. Returned identifiers are synthetic and only usable in other dry-run calls."
         }
       },
       "required": [
@@ -4336,6 +4508,10 @@ export const TOOLS: McpToolDefinition[] = [
         "idempotency_key": {
           "type": "string",
           "description": "Optional Idempotency-Key header for safe retries."
+        },
+        "dry_run": {
+          "type": "boolean",
+          "description": "Simulate this call: full validation and the real price, but nothing is created, no credits are debited, and no Idempotency-Key is consumed. Returned identifiers are synthetic and only usable in other dry-run calls."
         }
       },
       "required": [
@@ -4502,6 +4678,10 @@ export const TOOLS: McpToolDefinition[] = [
         "idempotency_key": {
           "type": "string",
           "description": "Optional Idempotency-Key header for safe retries."
+        },
+        "dry_run": {
+          "type": "boolean",
+          "description": "Simulate this call: full validation and the real price, but nothing is created, no credits are debited, and no Idempotency-Key is consumed. Returned identifiers are synthetic and only usable in other dry-run calls."
         }
       },
       "required": [
@@ -4728,6 +4908,10 @@ export const TOOLS: McpToolDefinition[] = [
         "idempotency_key": {
           "type": "string",
           "description": "Optional Idempotency-Key header for safe retries."
+        },
+        "dry_run": {
+          "type": "boolean",
+          "description": "Simulate this call: full validation and the real price, but nothing is created, no credits are debited, and no Idempotency-Key is consumed. Returned identifiers are synthetic and only usable in other dry-run calls."
         }
       },
       "required": [
@@ -4992,12 +5176,6 @@ export const TOOLS: McpToolDefinition[] = [
     "inputSchema": {
       "type": "object",
       "properties": {
-        "Idempotency-Key": {
-          "type": "string",
-          "minLength": 1,
-          "maxLength": 255,
-          "description": "Strongly recommended for this credit or workflow mutation. Use one unique key per logical request and reuse the same key only with the same method, path, query, and body after an uncertain result. Maximum 255 characters."
-        },
         "body": {
           "description": "JSON request body.",
           "oneOf": [
@@ -5114,6 +5292,10 @@ export const TOOLS: McpToolDefinition[] = [
         "idempotency_key": {
           "type": "string",
           "description": "Optional Idempotency-Key header for safe retries."
+        },
+        "dry_run": {
+          "type": "boolean",
+          "description": "Simulate this call: full validation and the real price, but nothing is created, no credits are debited, and no Idempotency-Key is consumed. Returned identifiers are synthetic and only usable in other dry-run calls."
         }
       },
       "required": [
@@ -5175,15 +5357,13 @@ export const TOOLS: McpToolDefinition[] = [
           "format": "uuid",
           "description": "Comment task ID."
         },
-        "Idempotency-Key": {
-          "type": "string",
-          "minLength": 1,
-          "maxLength": 255,
-          "description": "Strongly recommended for this credit or workflow mutation. Use one unique key per logical request and reuse the same key only with the same method, path, query, and body after an uncertain result. Maximum 255 characters."
-        },
         "idempotency_key": {
           "type": "string",
           "description": "Optional Idempotency-Key header for safe retries."
+        },
+        "dry_run": {
+          "type": "boolean",
+          "description": "Simulate this call: full validation and the real price, but nothing is created, no credits are debited, and no Idempotency-Key is consumed. Returned identifiers are synthetic and only usable in other dry-run calls."
         }
       },
       "required": [
@@ -5218,6 +5398,10 @@ export const TOOLS: McpToolDefinition[] = [
         "idempotency_key": {
           "type": "string",
           "description": "Optional Idempotency-Key header for safe retries."
+        },
+        "dry_run": {
+          "type": "boolean",
+          "description": "Simulate this call: full validation and the real price, but nothing is created, no credits are debited, and no Idempotency-Key is consumed. Returned identifiers are synthetic and only usable in other dry-run calls."
         }
       },
       "required": [
@@ -5267,6 +5451,10 @@ export const TOOLS: McpToolDefinition[] = [
         "idempotency_key": {
           "type": "string",
           "description": "Optional Idempotency-Key header for safe retries."
+        },
+        "dry_run": {
+          "type": "boolean",
+          "description": "Simulate this call: full validation and the real price, but nothing is created, no credits are debited, and no Idempotency-Key is consumed. Returned identifiers are synthetic and only usable in other dry-run calls."
         }
       },
       "required": [
