@@ -14,7 +14,7 @@ import {
   type McpToolDefinition,
 } from "./generated.js";
 
-const TOKPORTAL_MCP_VERSION = "1.14.0";
+const TOKPORTAL_MCP_VERSION = "1.15.1";
 const TOKPORTAL_CLIENT_HEADER = `tokportal-mcp/${TOKPORTAL_MCP_VERSION}`;
 
 const apiKey = process.env.TOKPORTAL_API_KEY;
@@ -142,12 +142,30 @@ function jsonBodyArgumentNames(tool: McpToolDefinition): Set<string> {
 
 /**
  * Top-level argument names the generated inputSchema declares: the path params,
- * the query params, `body`, and `idempotency_key`.
+ * the query params, `body`, `idempotency_key`, and `dry_run`.
  */
 function declaredArgumentNames(tool: McpToolDefinition): Set<string> {
   const properties = (tool.inputSchema as { properties?: Record<string, unknown> })
     .properties;
   return new Set(Object.keys(properties || {}));
+}
+
+/** Keep dry-run coercion identical to the remote MCP server. */
+function parseDryRunArg(value: unknown): boolean {
+  if (value === undefined || value === null || value === false) return false;
+  if (value === true) return true;
+  if (value === 1) return true;
+  if (value === 0) return false;
+  if (typeof value === "string") {
+    const normalized = value.trim().toLowerCase();
+    if (["true", "1", "yes"].includes(normalized)) return true;
+    if (["false", "0", "no", ""].includes(normalized)) return false;
+  }
+  throw new Error(
+    `dry_run must be a boolean, got ${JSON.stringify(value)}. Pass dry_run: true ` +
+      "to simulate the call or omit it to execute for real. The call was NOT executed: " +
+      "an ambiguous value must never silently turn a simulation into a real, credit-debiting call.",
+  );
 }
 
 function splitArgs(tool: McpToolDefinition, args: Record<string, unknown>) {
@@ -187,6 +205,8 @@ function splitArgs(tool: McpToolDefinition, args: Record<string, unknown>) {
     if (
       key === "body" ||
       key === "idempotency_key" ||
+      // Control arguments are transported as headers, never query parameters.
+      key === "dry_run" ||
       pathParamNames.includes(key) ||
       multipartArgNames.has(key) ||
       bodyArgNames.has(key)
@@ -221,6 +241,7 @@ function splitArgs(tool: McpToolDefinition, args: Record<string, unknown>) {
       typeof args.idempotency_key === "string"
         ? args.idempotency_key
         : undefined,
+    dryRun: parseDryRunArg(args.dry_run),
   };
 }
 
@@ -258,6 +279,7 @@ async function callTool(name: string, args: Record<string, unknown>) {
       ...(split.idempotencyKey
         ? { "Idempotency-Key": split.idempotencyKey }
         : {}),
+      ...(split.dryRun ? { "X-TokPortal-Dry-Run": "true" } : {}),
     },
     body: requestBody,
   });

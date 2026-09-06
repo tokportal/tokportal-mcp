@@ -1697,7 +1697,7 @@ export const TOOLS: McpToolDefinition[] = [
                 "null"
               ],
               "format": "date-time",
-              "description": "Start of an EXPLICIT publication window (ISO 8601 date-time). This is the only endpoint where the window's end is choosable — configuration and CSV import always derive it as start + 1 day. Send it together with target_publish_end_date and never alongside target_publish_date. Since 2026-08-26 it obeys the same minimum lead time as configuration (today+1 with a delivered or existing account, today+3 while the account is still being created, in UTC); an earlier value is rejected with INVALID_DATE carrying min_days_ahead and earliest_allowed."
+              "description": "Start of the publication window as an ISO 8601 date-time; only its UTC calendar day is kept. The window is always the same 2-day window as everywhere else: that day at 00:00 UTC and the next day — the end is derived and can never be shortened or extended (any time-of-day or caller-supplied end is normalized away; the response returns the stored window). Prefer target_publish_date (YYYY-MM-DD); never send both. Since 2026-08-26 it obeys the same minimum lead time as configuration (today+1 with a delivered or existing account, today+3 while the account is still being created, in UTC); an earlier value is rejected with INVALID_DATE carrying min_days_ahead and earliest_allowed."
             },
             "target_publish_end_date": {
               "type": [
@@ -1705,7 +1705,7 @@ export const TOOLS: McpToolDefinition[] = [
                 "null"
               ],
               "format": "date-time",
-              "description": "End of an EXPLICIT publication window (ISO 8601 date-time). Must be strictly after target_publish_start_date, and must be sent together with it — never alongside target_publish_date, and never on the configuration or CSV endpoints, where the end is derived and this field is refused."
+              "description": "Accepted for backward compatibility only. Must be strictly after target_publish_start_date and sent together with it — never alongside target_publish_date, and never on the configuration or CSV endpoints, where this field is refused. It does not choose the window: the end day is always the start day + 1 (2026-09-05), and the response returns the stored window."
             }
           },
           "minProperties": 1,

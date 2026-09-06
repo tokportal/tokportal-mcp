@@ -2,8 +2,8 @@
   "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
   "name": "com.tokportal/mcp",
   "title": "TokPortal",
-  "description": "Managed TikTok/Instagram/YouTube accounts + video posting at scale, operated by human managers.",
-  "version": "1.15.0",
+  "description": "Managed TikTok/Instagram accounts for geo-sharding, video posting and sandbox previews.",
+  "version": "1.15.1",
   "websiteUrl": "https://developers.tokportal.com/mcp",
   "repository": {
     "url": "https://github.com/tokportal/tokportal-mcp",
@@ -20,7 +20,7 @@
       "registryType": "npm",
       "registryBaseUrl": "https://registry.npmjs.org",
       "identifier": "tokportal-mcp",
-      "version": "1.15.0",
+      "version": "1.15.1",
       "transport": {
         "type": "stdio"
       },
