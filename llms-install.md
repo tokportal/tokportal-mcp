@@ -2,19 +2,31 @@
 
 TokPortal creates, warms and operates real TikTok and Instagram brand accounts through human account managers in 16+ countries. Connect your assistant to run geo-sharding across markets, configure posts, read analytics and follow delivery events. YouTube bundle creation is not available through this API, even though a reference price is published.
 
-**Release status:** source version 1.15.1 is ready in this repository, but npm publication is pending. Use the remote MCP connector below, or [REST with `X-TokPortal-Dry-Run: true`](https://developers.tokportal.com/sandbox/), until the fixed npm package is available.
-
 ## Prerequisites
 - A TokPortal account. [Sign up](https://app.tokportal.com?utm_source=github&utm_medium=llms-install&utm_campaign=tokportal-mcp) if needed.
 - Local stdio needs an API key (`sk_...`) from the [developer dashboard](https://app.tokportal.com/developer/api-keys?utm_source=github&utm_medium=llms-install&utm_campaign=tokportal-mcp). Remote OAuth clients use the TokPortal sign-in instead.
 - Node.js 20 or newer for local stdio. No global installation is needed: `npx` downloads and starts the package.
-- Local version 1.15.0 advertised `dry_run` but did not transmit the sandbox header, so a preview could execute a real operation. Do not use the currently published local package for sandbox calls. Local sandbox support requires version **1.15.1 or newer**, which is not yet published on npm.
+- Sandbox calls require local `tokportal-mcp` version **1.15.1 or newer**, or the remote connector. Local version 1.15.0 advertised `dry_run` but did not transmit the sandbox header, so a preview could execute a real operation. Upgrade and restart older local servers before using write tools for a simulation. If the running local version is unknown, use the remote connector or REST.
 
-## Local stdio: fixed npm release pending
+## Option A: local stdio server
 
-Do not install `tokportal-mcp@1.15.1` from npm yet: publication is pending. Use the remote connector for the preview workflow below. Local installation instructions will apply once the fixed version is available.
+Add this to the MCP settings file of the client (for Cline: `cline_mcp_settings.json`):
 
-## Connect now: remote server (OAuth, no key pasting)
+```json
+{
+  "mcpServers": {
+    "tokportal": {
+      "command": "npx",
+      "args": ["-y", "tokportal-mcp@1.15.1"],
+      "env": { "TOKPORTAL_API_KEY": "sk_your_key_here" }
+    }
+  }
+}
+```
+
+Restart the server after updating an existing configuration. For a global installation, run `npm install --global tokportal-mcp@1.15.1`, then restart the server. Verify that the running local version is 1.15.1 or later before using its write tools.
+
+## Option B: remote server (OAuth, no key pasting)
 
 URL: `https://app.tokportal.com/api/ext/mcp` (Streamable HTTP). Add this URL in a client that supports remote MCP with OAuth and complete the TokPortal sign-in. Choose Full access to preview write tools, or Read-only access for reads. Clients without OAuth can send `Authorization: Bearer sk_your_key_here`.
 
@@ -32,7 +44,7 @@ Call `tokportal_get_current_user`, `tokportal_get_credit_balance`, `tokportal_li
 
 ## Preview a workflow before spending credits
 
-On the remote MCP connector, pass `dry_run: true` at the top level of a write tool's arguments, with JSON request fields inside `body`. For example, after confirming that `USA` is available, call `tokportal_create_bundle` with:
+On local version 1.15.1 or later or the remote MCP connector, pass `dry_run: true` at the top level of a write tool's arguments, with JSON request fields inside `body`. For example, after confirming that `USA` is available, call `tokportal_create_bundle` with:
 
 ```json
 {

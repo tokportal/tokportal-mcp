@@ -5,7 +5,7 @@
 
 TokPortal is the managed social infrastructure API: real TikTok and Instagram brand accounts created, warmed and operated by human account managers in 16+ countries, exposed as a REST API and an MCP server. Run geo-sharding across markets without connecting every social account through OAuth. YouTube bundle creation is not available through this API.
 
-**Release status:** the 1.15.1 fix is ready in this repository, but npm publication is pending. The published 1.15.0 package advertised `dry_run` without sending the sandbox header, so a preview could execute a real operation. Until 1.15.1 is available on npm, use the [remote connector](https://developers.tokportal.com/mcp/remote/) or [REST with `X-TokPortal-Dry-Run: true`](https://developers.tokportal.com/sandbox/) for sandbox calls.
+**Upgrade before using the sandbox:** local `tokportal-mcp` requires **1.15.1 or newer** for `dry_run`. Version 1.15.0 advertised the argument but did not send the sandbox header, so a preview could execute a real operation. Upgrade and restart an older local server first. If you cannot verify the running local version, use the [remote connector](https://developers.tokportal.com/mcp/remote/) or [REST with `X-TokPortal-Dry-Run: true`](https://developers.tokportal.com/sandbox/).
 
 Docs https://developers.tokportal.com · API base https://app.tokportal.com/api/ext · OpenAPI https://developers.tokportal.com/openapi.json · MCP remote https://app.tokportal.com/api/ext/mcp · Get an API key https://app.tokportal.com/developer/api-keys?utm_source=npm&utm_medium=readme&utm_campaign=tokportal-mcp · llms.txt https://developers.tokportal.com/llms.txt
 
@@ -17,20 +17,19 @@ Two ways to use it:
 
 | Mode | Transport | When to use |
 | --- | --- | --- |
-| **Local source 1.15.1** (npm publication pending) | stdio | Desktop clients, local agents, file uploads from disk |
+| **Local** (`npx tokportal-mcp@1.15.1`) | stdio | Desktop clients, local agents, file uploads from disk |
 | **Remote** (`https://app.tokportal.com/api/ext/mcp`) | Streamable HTTP | Hosted agents, no install; same tool catalogue |
 
 Requires Node.js 20 or newer. The local server runs on it directly. Get an API key at https://app.tokportal.com/developer/api-keys?utm_source=npm&utm_medium=readme&utm_campaign=tokportal-mcp (format `sk_` + 64 hex chars).
 
 ## 30-second quickstart
 
-Connect to the live remote MCP endpoint: `https://app.tokportal.com/api/ext/mcp`. For Claude Code:
-
 ```bash
-claude mcp add --transport http tokportal https://app.tokportal.com/api/ext/mcp
+npm install -g tokportal-mcp@1.15.1
+TOKPORTAL_API_KEY=sk_your_key_here tokportal-mcp
 ```
 
-Run `/mcp` to sign in and choose Full access to preview write tools. Other hosts can follow the [remote setup instructions](https://developers.tokportal.com/mcp/remote/). On this remote connection, ask:
+The server speaks MCP over stdio. Point any MCP client at it and ask, for example:
 
 > "Read the available countries, credit prices and my balance. Preview a TikTok account-only bundle in the USA with dry_run: true. Show me the immediate and recurring costs, and wait for my GO before any live purchase."
 
@@ -46,7 +45,7 @@ const client = new Client({ name: "demo", version: "1.0.0" });
 await client.connect(
   new StdioClientTransport({
     command: "npx",
-    args: ["-y", "tokportal-mcp"],
+    args: ["-y", "tokportal-mcp@1.15.1"],
     env: { ...process.env, TOKPORTAL_API_KEY: process.env.TOKPORTAL_API_KEY },
   }),
 );
@@ -58,7 +57,7 @@ console.log(tools.length, me.content[0].text);
 
 ## Client configuration
 
-Use the remote URL configuration below while npm publication is pending. The local stdio snippets are a configuration reference for after version 1.15.1 or newer is available on npm; the currently published 1.15.0 package must not be used for sandbox calls. Replace `sk_your_key_here` with your key.
+The local stdio snippets pin version 1.15.1, which forwards the sandbox header. Restart the server after updating an existing configuration. For a global installation, run `npm install --global tokportal-mcp@1.15.1` and restart the server. Replace `sk_your_key_here` with your key.
 
 ### Cursor
 
@@ -69,7 +68,7 @@ Use the remote URL configuration below while npm publication is pending. The loc
   "mcpServers": {
     "tokportal": {
       "command": "npx",
-      "args": ["-y", "tokportal-mcp"],
+      "args": ["-y", "tokportal-mcp@1.15.1"],
       "env": { "TOKPORTAL_API_KEY": "sk_your_key_here" }
     }
   }
@@ -85,7 +84,7 @@ Use the remote URL configuration below while npm publication is pending. The loc
   "mcpServers": {
     "tokportal": {
       "command": "npx",
-      "args": ["-y", "tokportal-mcp"],
+      "args": ["-y", "tokportal-mcp@1.15.1"],
       "env": { "TOKPORTAL_API_KEY": "sk_your_key_here" }
     }
   }
@@ -95,7 +94,7 @@ Use the remote URL configuration below while npm publication is pending. The loc
 ### Claude Code
 
 ```bash
-claude mcp add tokportal -e TOKPORTAL_API_KEY=sk_your_key_here -- npx -y tokportal-mcp
+claude mcp add tokportal -e TOKPORTAL_API_KEY=sk_your_key_here -- npx -y tokportal-mcp@1.15.1
 # or the remote server:
 claude mcp add --transport http tokportal https://app.tokportal.com/api/ext/mcp --header "X-API-Key: sk_your_key_here"
 ```
@@ -110,7 +109,7 @@ claude mcp add --transport http tokportal https://app.tokportal.com/api/ext/mcp 
     "tokportal": {
       "type": "stdio",
       "command": "npx",
-      "args": ["-y", "tokportal-mcp"],
+      "args": ["-y", "tokportal-mcp@1.15.1"],
       "env": { "TOKPORTAL_API_KEY": "sk_your_key_here" }
     }
   }
@@ -126,7 +125,7 @@ claude mcp add --transport http tokportal https://app.tokportal.com/api/ext/mcp 
   "mcpServers": {
     "tokportal": {
       "command": "npx",
-      "args": ["-y", "tokportal-mcp"],
+      "args": ["-y", "tokportal-mcp@1.15.1"],
       "env": { "TOKPORTAL_API_KEY": "sk_your_key_here" }
     }
   }
@@ -140,7 +139,7 @@ claude mcp add --transport http tokportal https://app.tokportal.com/api/ext/mcp 
 ```toml
 [mcp_servers.tokportal]
 command = "npx"
-args = ["-y", "tokportal-mcp"]
+args = ["-y", "tokportal-mcp@1.15.1"]
 env = { TOKPORTAL_API_KEY = "sk_your_key_here" }
 ```
 
@@ -153,7 +152,7 @@ env = { TOKPORTAL_API_KEY = "sk_your_key_here" }
   "mcpServers": {
     "tokportal": {
       "command": "npx",
-      "args": ["-y", "tokportal-mcp"],
+      "args": ["-y", "tokportal-mcp@1.15.1"],
       "env": { "TOKPORTAL_API_KEY": "sk_your_key_here" }
     }
   }
@@ -190,11 +189,11 @@ The server exposes TokPortal API actions as MCP tools over stdio. It is generate
 
 - Tool names are `tokportal_<operation_id_snake_case>` (`tokportal_create_bundle`, `tokportal_list_accounts`, ...). Path and query parameters are top-level inputs; JSON bodies go in `body`.
 - Every tool carries `title`, `readOnlyHint`, `destructiveHint`, `idempotentHint` and `openWorldHint`. Read the annotations on each tool: paid operations and irreversible actions can be destructive even when they do not delete anything.
-- In the 1.15.1 source and the live remote connector, every non-GET tool accepts top-level `dry_run: true`, sent as `X-TokPortal-Dry-Run: true`. It is never placed in the query or request body. Dry runs consume normal rate limits but do not consume an `idempotency_key`; use the same key for a later live request if its operation supports idempotency. The npm release of this local fix is pending.
+- In local version 1.15.1 or later and the remote connector, every non-GET tool accepts top-level `dry_run: true`, sent as `X-TokPortal-Dry-Run: true`. It is never placed in the query or request body. Dry runs consume normal rate limits but do not consume an `idempotency_key`; use the same key for a later live request if its operation supports idempotency.
 - Multipart upload tools are generated from OpenAPI too. Binary fields are exposed as local path inputs such as `file_path`, with the remaining form fields exposed by their schema names.
 - Mutations accept an optional `idempotency_key` (sent as `Idempotency-Key`) except for secret-bearing operations (credential reveal, verification codes, webhook creation, signed upload URLs, report creation) which are never replayed.
 
-The local 1.15.1 source sends `X-TokPortal-Client: tokportal-mcp/1.15.1` on API requests for observability and support diagnostics.
+Local version 1.15.1 sends `X-TokPortal-Client: tokportal-mcp/1.15.1` on API requests for observability and support diagnostics.
 
 Failed tool calls return an error result with a `diagnostics` object containing `request_id`, `retry_after_seconds`, and `rate_limit` when those headers are available.
 
