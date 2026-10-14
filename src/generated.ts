@@ -18,6 +18,7 @@ export type McpToolDefinition = {
   }>;
   inputSchema: Record<string, unknown>;
   annotations: McpToolAnnotations;
+  requiredFeature?: "ai";
 };
 
 // MCP tool annotations (spec 2025-03-26+). Hints only — clients must not rely
@@ -31,6 +32,53 @@ export type McpToolAnnotations = {
 };
 
 export const TOKPORTAL_BASE_URL = "https://app.tokportal.com/api/ext";
+
+// A staged feature must not change the legacy catalogue until enabled.
+// This is discovery gating only; REST authorization is always authoritative.
+export function isToolFeatureEnabled(tool: McpToolDefinition, aiEnabled: boolean): boolean {
+  return tool.requiredFeature !== "ai" || aiEnabled;
+}
+
+const aiAvailabilityCache = new Map<string, { enabled: boolean; expiresAt: number }>();
+
+/** Authenticated, free first-party discovery. Failure must preserve legacy tools. */
+export async function discoverAiAvailability(baseUrl: string, apiKey: string, fresh = false): Promise<boolean> {
+  if (!apiKey) return false;
+  const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(baseUrl + "\n" + apiKey));
+  const cacheKey = Array.from(new Uint8Array(digest), (byte) => byte.toString(16).padStart(2, "0")).join("");
+  const cached = aiAvailabilityCache.get(cacheKey);
+  if (!fresh && cached && cached.expiresAt > Date.now()) return cached.enabled;
+  let enabled = false;
+  // Retry only this free, read-only discovery request. A cold start or a brief
+  // network failure must not hide an invited user's tools for the cache TTL.
+  // Never retry the generation/payment request from this helper.
+  let confirmed = false;
+  for (let attempt = 0; attempt < 2; attempt++) try {
+    const response = await fetch(baseUrl.replace(/\/+$/, "") + "/ai/status", {
+      method: "GET",
+      headers: { "X-API-Key": apiKey, Accept: "application/json" },
+      signal: AbortSignal.timeout(5000),
+      cache: "no-store",
+      redirect: "error",
+    });
+    if (response.status >= 500) { await response.body?.cancel(); continue; }
+    if (response.ok) {
+      const payload = await response.json() as { data?: { enabled?: unknown; availability?: { status?: unknown } } };
+      enabled = payload?.data?.enabled === true && payload.data.availability?.status === "available";
+    } else if (response.status !== 401 && response.status !== 403) {
+      await response.body?.cancel();
+      return false;
+    }
+    confirmed = true;
+    break;
+  } catch {
+    // No provider fallback, leaked token, or log of credential-bearing context.
+  }
+  if (!confirmed) return false;
+  if (aiAvailabilityCache.size >= 256) aiAvailabilityCache.delete(aiAvailabilityCache.keys().next().value!);
+  aiAvailabilityCache.set(cacheKey, { enabled, expiresAt: Date.now() + 15_000 });
+  return enabled;
+}
 
 // prettier-ignore
 export const TOOLS: McpToolDefinition[] = [
@@ -392,7 +440,7 @@ export const TOOLS: McpToolDefinition[] = [
   {
     "name": "tokportal_list_bundles",
     "operationId": "listBundles",
-    "description": "List bundles. Lists your bundles with their lifecycle status and the computed `next_action` (`configure_account`, `configure_videos`, `publish_bundle`, or null). `next_action` is the recommended way to find what a bundle still needs.",
+    "description": "List bundles. Lists your bundles with their lifecycle status and the computed `next_action` (`configure_account`, `configure_videos`, `publish_bundle`, or null). `next_action` is the recommended way to find what a bundle still needs. Video counters cover all slots and are independent of page/per_page: `videos_quantity` is the recorded slot quantity, `videos_total` counts existing slots, and `videos_configured_count` includes configured, published, accepted, in_review, pending_corrections and finalized slots. Unused slots have status `pending`; with the current status set their count is `videos_total - videos_configured_count`. Configured or finalized slots are not unused capacity. A failed video read returns an error, never zero counters.",
     "method": "GET",
     "path": "/bundles",
     "requestContentType": null,
@@ -776,7 +824,7 @@ export const TOOLS: McpToolDefinition[] = [
   {
     "name": "tokportal_get_bundle",
     "operationId": "getBundle",
-    "description": "Get a bundle. Full state of one bundle: status, account configuration, video slot counts, warming purchase, cancellation and remake history, and `next_action`. A remade bundle keeps the same id while its `saved_account_id` changes.",
+    "description": "Get a bundle. Full state of one bundle: status, account configuration, video slot counts, warming purchase, cancellation and remake history, and `next_action`. A remade bundle keeps the same id while its `saved_account_id` changes. Includes all video slots, including bundles with more than 1,000 slots. For unused capacity, count `videos` with status `pending`; `videos_configured_count` includes slots that have since been published or finalized. Counters have the same meaning as listBundles.",
     "method": "GET",
     "path": "/bundles/{id}",
     "requestContentType": null,
@@ -976,7 +1024,7 @@ export const TOOLS: McpToolDefinition[] = [
   {
     "name": "tokportal_add_video_slots",
     "operationId": "addVideoSlots",
-    "description": "Add video slots to a bundle. Buys additional video slots on an existing bundle and debits credits immediately (see `video_upload` in getCreditCosts). The slots are non-refundable and there is no cancellation path for this purchase — confirm the exact cost with the user before calling. Configure the new positions with configureBundleVideo, then publish them.",
+    "description": "Add video slots to a bundle. Buys additional video slots on an existing bundle and debits credits immediately (see `video_upload` in getCreditCosts). The slots are non-refundable and there is no cancellation path for this purchase; confirm the exact cost with the user before calling. Allowed bundle statuses: `pending_setup`, `published`, `published_priority`, `accepted`. An `account_only` or `completed` bundle cannot receive more slots; create a `videos_only` bundle for the saved account instead, subject to account eligibility. Configure the new positions with configureBundleVideo, then publish them.",
     "method": "POST",
     "path": "/bundles/{id}/add-video-slots",
     "requestContentType": "application/json",
@@ -1357,7 +1405,7 @@ export const TOOLS: McpToolDefinition[] = [
   {
     "name": "tokportal_list_bundle_videos",
     "operationId": "listBundleVideos",
-    "description": "List bundle video slots. Lists every video slot of a bundle with its position, configuration, schedule and review status. Positions are 1-based and run up to the bundle's `videos_quantity`.",
+    "description": "List bundle video slots. Lists every video slot of a bundle with its position, configuration, schedule and review status, including bundles with more than 1,000 slots. Unused slots have status `pending`; configured, scheduled and finalized slots are already allocated. Positions are 1-based and run up to the bundle's `videos_quantity`. Every video carries `platform_signals`, what the platform did with the live post once it exists: `not_recommended` (TikTok Not For Feed / Not Recommended — online but no distribution), `ai_label` (`creator` | `platform`), `sound` (`ok` | `non_commercial` | `removed` | `muted`) with `sound_reason`, and `checked_at`. All fields are null until the post has been checked (~48 h after posting, again at 7 days); `null` means unknown, never 'no'. The same events arrive as `video.not_recommended`, `video.ai_labeled` and `video.sound_restricted` webhooks.",
     "method": "GET",
     "path": "/bundles/{id}/videos",
     "requestContentType": null,
@@ -1387,7 +1435,7 @@ export const TOOLS: McpToolDefinition[] = [
   {
     "name": "tokportal_get_bundle_video",
     "operationId": "getBundleVideo",
-    "description": "Get video slot configuration. Returns one video slot's configuration, schedule, review status and post link. Use it to check whether a slot is still inside its review window before finalizing it.",
+    "description": "Get video slot configuration. Returns one video slot's configuration, schedule, review status and post link, plus `platform_signals` (TikTok not-recommended flag, AI label, sound status — null until the live post has been checked). Use it to check whether a slot is still inside its review window before finalizing it, or whether the platform is distributing the post at all.",
     "method": "GET",
     "path": "/bundles/{id}/videos/{position}",
     "requestContentType": null,
@@ -3450,6 +3498,10 @@ export const TOOLS: McpToolDefinition[] = [
                   "video.published",
                   "video.pending_corrections",
                   "video.finalized",
+                  "video.not_recommended",
+                  "video.ai_labeled",
+                  "video.sound_restricted",
+                  "account.distribution_warning",
                   "warming.session_started",
                   "warming.term_verified",
                   "warming.session_completed",
@@ -3575,6 +3627,10 @@ export const TOOLS: McpToolDefinition[] = [
                   "video.published",
                   "video.pending_corrections",
                   "video.finalized",
+                  "video.not_recommended",
+                  "video.ai_labeled",
+                  "video.sound_restricted",
+                  "account.distribution_warning",
                   "warming.session_started",
                   "warming.term_verified",
                   "warming.session_completed",
@@ -4595,9 +4651,39 @@ export const TOOLS: McpToolDefinition[] = [
     }
   },
   {
+    "name": "tokportal_get_analytics_account_insights",
+    "operationId": "getAnalyticsAccountInsights",
+    "description": "Get connected Instagram or TikTok insights. Read stored account-period insights, daily follower/reach history and per-post watch time, completion, traffic and audience data. Requires Creator or above; fields remain tier-aware. available=false and connected_analytics=null when no recently verified active Zernio connection exists, including after disconnection. Never starts a provider refresh. Account metrics use the explicit period; post metrics are lifetime observations. Missing metrics are omitted, not zero; completion_rate is 0..1, traffic_sources and audience_types are 0..100 percentages, watch times are seconds. Instagram demographics need an eligible audience (normally 100+ followers). Detailed metrics may lag 24–48 hours. The same connected_analytics block appears on getAnalyticsAccount.",
+    "method": "GET",
+    "path": "/analytics/accounts/{id}/insights",
+    "requestContentType": null,
+    "multipartFields": [],
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "format": "uuid",
+          "description": "Saved account ID."
+        }
+      },
+      "required": [
+        "id"
+      ],
+      "additionalProperties": false
+    },
+    "annotations": {
+      "title": "Get connected Instagram or TikTok insights",
+      "readOnlyHint": true,
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false
+    }
+  },
+  {
     "name": "tokportal_get_analytics_account",
     "operationId": "getAnalyticsAccount",
-    "description": "Get account analytics drilldown. Analytics v2 drilldown for one account: current metrics, top posts and demographics. This is the current endpoint; getAccountAnalytics is the older compatibility shape of the same data. Call getAnalyticsContract before interpreting these numbers: top-line values are lifetime per-post totals, connected-account values are rolling windows, the two intentionally do not mirror each other, and your access tier may redact metrics — a missing field means unavailable, never zero.",
+    "description": "Get account analytics drilldown. Analytics v2 drilldown for one account: current metrics, top posts and demographics. Includes optional connected_analytics with account-period insights and post depth only while a Zernio connection has recent active identity proof; absent for disconnected accounts and Starter plans. getAnalyticsAccountInsights returns this block alone. This is the current endpoint; getAccountAnalytics is the older compatibility shape. Call getAnalyticsContract before interpreting numbers: top-line values are lifetime per-post totals, connected-account values are rolling windows, and your access tier may redact metrics. Missing fields mean unavailable, never zero.",
     "method": "GET",
     "path": "/analytics/accounts/{id}",
     "requestContentType": null,
@@ -4850,7 +4936,7 @@ export const TOOLS: McpToolDefinition[] = [
   {
     "name": "tokportal_get_video_analytics",
     "operationId": "getVideoAnalytics",
-    "description": "Get single video analytics. Lifetime metrics for one tracked post. Interpret them with getAnalyticsContract: these are lifetime per-post totals and deliberately do not match the rolling-window figures shown for a connected account.",
+    "description": "Get single video analytics. Lifetime metrics for one tracked post. Interpret them with getAnalyticsContract: these are lifetime per-post totals and deliberately do not match the rolling-window figures shown for a connected account. Also returns `platform_signals` (not recommended, AI label, sound) and `signal_insights` (followers gained, audience split, impression sources, retention curve — Creator tier and above).",
     "method": "GET",
     "path": "/videos/{id}/analytics",
     "requestContentType": null,
@@ -5115,6 +5201,65 @@ export const TOOLS: McpToolDefinition[] = [
     },
     "annotations": {
       "title": "List raw post analytics snapshots",
+      "readOnlyHint": true,
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false
+    }
+  },
+  {
+    "name": "tokportal_list_analytics_signals",
+    "operationId": "listAnalyticsSignals",
+    "description": "List posts flagged by the platform. Owner-scoped list of posted videos carrying a platform signal, newest first: TikTok `not_recommended` (Not For Feed / Not Recommended — the post stays online but is excluded from For You and typically sits at 0 views), `ai_label` (`creator` = declared at posting, `platform` = applied by TikTok moderation) and `sound_status` (`non_commercial` = cannot be promoted, `removed` = pulled for copyright, `muted` = Instagram). Each row carries `platform_signals` (the same object returned on every video by GET /bundles/{id}/videos) and, from the Creator tier, `signal_insights` (followers gained, new vs returning viewers, impression sources, retention curve). Signals are observed by a public check about 48 hours after posting and again after 7 days; `null` means not checked yet, never 'no'. Available on every analytics tier.",
+    "method": "GET",
+    "path": "/analytics/signals",
+    "requestContentType": null,
+    "multipartFields": [],
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "signal": {
+          "type": "string",
+          "enum": [
+            "not_recommended",
+            "ai_label",
+            "sound_status"
+          ],
+          "description": "Only posts carrying this signal. Omit for any signal."
+        },
+        "account": {
+          "type": "string",
+          "format": "uuid",
+          "description": "Repeatable saved account filter."
+        },
+        "from": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Only signals updated after this instant."
+        },
+        "to": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Only signals updated before this instant."
+        },
+        "limit": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 200,
+          "default": 50,
+          "description": "query parameter limit"
+        },
+        "offset": {
+          "type": "integer",
+          "minimum": 0,
+          "default": 0,
+          "description": "query parameter offset"
+        }
+      },
+      "additionalProperties": false
+    },
+    "annotations": {
+      "title": "List posts flagged by the platform",
       "readOnlyHint": true,
       "destructiveHint": false,
       "idempotentHint": true,
@@ -5500,5 +5645,974 @@ export const TOOLS: McpToolDefinition[] = [
       "idempotentHint": true,
       "openWorldHint": false
     }
+  },
+  {
+    "name": "tokportal_ai_catalog",
+    "operationId": "aiCatalog",
+    "description": "Discover AI models and capabilities. Lists public model aliases and availability. A blocked capability is not usable. Fetch the chosen model schema before quoting; never infer support from a model name.",
+    "method": "GET",
+    "path": "/ai/models",
+    "requestContentType": null,
+    "multipartFields": [],
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "capability": {
+          "type": "string",
+          "description": "query parameter capability"
+        },
+        "cursor": {
+          "type": "string",
+          "description": "query parameter cursor"
+        },
+        "limit": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 100,
+          "default": 20,
+          "description": "query parameter limit"
+        }
+      },
+      "additionalProperties": false
+    },
+    "annotations": {
+      "title": "Discover AI models and capabilities",
+      "readOnlyHint": true,
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false
+    },
+    "requiredFeature": "ai"
+  },
+  {
+    "name": "tokportal_ai_model_schema",
+    "operationId": "aiModelSchema",
+    "description": "Read a model's current input schema and capabilities.",
+    "method": "GET",
+    "path": "/ai/models/{model_id}",
+    "requestContentType": null,
+    "multipartFields": [],
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "model_id": {
+          "type": "string",
+          "minLength": 1,
+          "description": "path parameter model_id"
+        },
+        "operation": {
+          "type": "string",
+          "description": "query parameter operation"
+        }
+      },
+      "required": [
+        "model_id"
+      ],
+      "additionalProperties": false
+    },
+    "annotations": {
+      "title": "Read a model's current input schema and capabilities",
+      "readOnlyHint": true,
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false
+    },
+    "requiredFeature": "ai"
+  },
+  {
+    "name": "tokportal_ai_generate",
+    "operationId": "aiGenerate",
+    "description": "Generate media with automatic AI wallet billing. Send model, prompt and model-specific controls directly. The server prices and reserves funds automatically within the key's approved per-job and monthly limits. Optional max_cost_usd sets a lower request cap. A separate quote is not required; quote_id plus max_cost_usd remains supported for explicit cost previews. Requires AI spending permission, wallet balance and Idempotency-Key. Reuse the same key and body after uncertainty. Does not publish. Poll with ai_inspect resource jobs. For video drafts, propose 480p (lower cost), 720p for a balance, or 1080p for final quality; respect the user's choice.",
+    "method": "POST",
+    "path": "/ai/generations",
+    "requestContentType": "application/json",
+    "multipartFields": [],
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "body": {
+          "type": "object",
+          "properties": {
+            "model": {
+              "type": "string",
+              "minLength": 1,
+              "description": "Public model alias from GET /ai/models. Fetch its current schema first."
+            },
+            "operation": {
+              "type": "string",
+              "minLength": 1,
+              "description": "Model operation/capability from its schema, including image, video, audio, chat, analysis, or verification where available."
+            },
+            "prompt": {
+              "type": "string"
+            },
+            "assets": {
+              "type": "object",
+              "additionalProperties": true
+            },
+            "controls": {
+              "type": "object",
+              "additionalProperties": true
+            },
+            "options": {
+              "type": "object",
+              "additionalProperties": true,
+              "description": "Documented advanced options for the selected capability. No arbitrary provider URL, credentials, or HTTP route is accepted."
+            },
+            "quote_id": {
+              "type": "string",
+              "format": "uuid",
+              "description": "Opaque TokPortal resource ID. Never a provider task ID."
+            },
+            "max_cost_usd": {
+              "type": "string",
+              "pattern": "^(0|[1-9][0-9]*)(\\.[0-9]{1,6})?$",
+              "example": "2.500000",
+              "description": "Non-negative USD decimal string, up to six fractional digits. Never a credit count or binary floating-point amount."
+            }
+          },
+          "required": [],
+          "additionalProperties": false,
+          "oneOf": [
+            {
+              "required": [
+                "model"
+              ],
+              "not": {
+                "required": [
+                  "quote_id"
+                ]
+              }
+            },
+            {
+              "required": [
+                "quote_id",
+                "max_cost_usd"
+              ],
+              "not": {
+                "anyOf": [
+                  {
+                    "required": [
+                      "model"
+                    ]
+                  },
+                  {
+                    "required": [
+                      "operation"
+                    ]
+                  },
+                  {
+                    "required": [
+                      "prompt"
+                    ]
+                  },
+                  {
+                    "required": [
+                      "assets"
+                    ]
+                  },
+                  {
+                    "required": [
+                      "controls"
+                    ]
+                  },
+                  {
+                    "required": [
+                      "options"
+                    ]
+                  }
+                ]
+              }
+            }
+          ],
+          "description": "JSON request body."
+        },
+        "idempotency_key": {
+          "type": "string",
+          "description": "Required Idempotency-Key. Reuse with the identical request after an uncertain result; never issue a new key to retry spending."
+        }
+      },
+      "required": [
+        "body",
+        "idempotency_key"
+      ],
+      "additionalProperties": false
+    },
+    "annotations": {
+      "title": "Generate media with automatic AI wallet billing",
+      "readOnlyHint": false,
+      "destructiveHint": true,
+      "idempotentHint": false,
+      "openWorldHint": true
+    },
+    "requiredFeature": "ai"
+  },
+  {
+    "name": "tokportal_ai_topup",
+    "operationId": "aiTopup",
+    "description": "Create an explicitly approved AI wallet top-up checkout. Billing action, never an implied prerequisite to generation. Only call after the user explicitly approves the displayed USD amount. Return the payment URL for the user to complete; never claim the wallet was credited merely because checkout was created.",
+    "method": "POST",
+    "path": "/ai/wallet/topups",
+    "requestContentType": "application/json",
+    "multipartFields": [],
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "body": {
+          "type": "object",
+          "properties": {
+            "amount_usd": {
+              "type": "string",
+              "pattern": "^(0|[1-9][0-9]*)(\\.[0-9]{1,6})?$",
+              "example": "2.500000",
+              "description": "Non-negative USD decimal string, up to six fractional digits. Never a credit count or binary floating-point amount."
+            },
+            "billing_consent": {
+              "const": true
+            },
+            "auto_topup": {
+              "type": "object",
+              "properties": {
+                "threshold_usd": {
+                  "type": "string",
+                  "pattern": "^(0|[1-9][0-9]*)(\\.[0-9]{1,6})?$",
+                  "example": "2.500000",
+                  "description": "Non-negative USD decimal string, up to six fractional digits. Never a credit count or binary floating-point amount."
+                },
+                "amount_usd": {
+                  "type": "string",
+                  "pattern": "^(0|[1-9][0-9]*)(\\.[0-9]{1,6})?$",
+                  "example": "2.500000",
+                  "description": "Non-negative USD decimal string, up to six fractional digits. Never a credit count or binary floating-point amount."
+                },
+                "monthly_limit_usd": {
+                  "type": "string",
+                  "pattern": "^(0|[1-9][0-9]*)(\\.[0-9]{1,6})?$",
+                  "example": "2.500000",
+                  "description": "Non-negative USD decimal string, up to six fractional digits. Never a credit count or binary floating-point amount."
+                },
+                "approved_api_client_id": {
+                  "type": "string",
+                  "format": "uuid",
+                  "description": "Opaque TokPortal resource ID. Never a provider task ID."
+                },
+                "billing_consent": {
+                  "const": true
+                },
+                "consent_version": {
+                  "const": "ai-auto-topup-v1"
+                }
+              },
+              "required": [
+                "threshold_usd",
+                "amount_usd",
+                "monthly_limit_usd",
+                "approved_api_client_id",
+                "billing_consent",
+                "consent_version"
+              ],
+              "additionalProperties": false
+            }
+          },
+          "required": [
+            "amount_usd",
+            "billing_consent"
+          ],
+          "additionalProperties": false,
+          "description": "JSON request body."
+        },
+        "idempotency_key": {
+          "type": "string",
+          "description": "Required Idempotency-Key. Reuse with the identical request after an uncertain result; never issue a new key to retry spending."
+        }
+      },
+      "required": [
+        "body",
+        "idempotency_key"
+      ],
+      "additionalProperties": false
+    },
+    "annotations": {
+      "title": "Create an explicitly approved AI wallet top-up checkout",
+      "readOnlyHint": false,
+      "destructiveHint": true,
+      "idempotentHint": false,
+      "openWorldHint": true
+    },
+    "requiredFeature": "ai"
+  },
+  {
+    "name": "tokportal_ai_inspect",
+    "operationId": "aiInspect",
+    "description": "Inspect AI jobs, media, wallet or permissions. Read-only facade over fixed AI resources. Optional id reads one owned job, asset, collection, or verification; omit it to list. wallet, transactions, access, auto_topup and status do not accept a resource ID. No provider work or payment is started.",
+    "method": "GET",
+    "path": "/ai/inspect",
+    "requestContentType": null,
+    "multipartFields": [],
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "resource": {
+          "type": "string",
+          "enum": [
+            "status",
+            "jobs",
+            "assets",
+            "collections",
+            "collection_assets",
+            "library",
+            "verifications",
+            "wallet",
+            "transactions",
+            "access",
+            "auto_topup"
+          ],
+          "description": "query parameter resource"
+        },
+        "id": {
+          "type": "string",
+          "format": "uuid",
+          "description": "query parameter id"
+        },
+        "cursor": {
+          "type": "string",
+          "description": "query parameter cursor"
+        },
+        "limit": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 100,
+          "default": 20,
+          "description": "query parameter limit"
+        },
+        "query": {
+          "type": "string",
+          "maxLength": 300,
+          "description": "query parameter query"
+        },
+        "page_number": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 1000000,
+          "description": "query parameter page_number"
+        },
+        "page_size": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 100,
+          "description": "query parameter page_size"
+        }
+      },
+      "required": [
+        "resource"
+      ],
+      "additionalProperties": false
+    },
+    "annotations": {
+      "title": "Inspect AI jobs, media, wallet or permissions",
+      "readOnlyHint": true,
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false
+    },
+    "requiredFeature": "ai"
+  },
+  {
+    "name": "tokportal_ai_manage",
+    "operationId": "aiManage",
+    "description": "Manage AI media, collections, cancellations and human verification. A fixed action enum, never an arbitrary HTTP proxy. Review the action before approving: deletion can remove media, cancellation does not guarantee a refund, and verification starts or refreshes an explicitly approved external human-verification session. All actions require Idempotency-Key. Verification is operationally gated until its provider pricing and consent requirements are approved.",
+    "method": "POST",
+    "path": "/ai/manage",
+    "requestContentType": "application/json",
+    "multipartFields": [],
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "body": {
+          "type": "object",
+          "properties": {
+            "action": {
+              "type": "string",
+              "enum": [
+                "cancel_job",
+                "import_asset",
+                "create_upload",
+                "complete_upload",
+                "update_asset",
+                "delete_asset",
+                "create_collection",
+                "update_collection",
+                "delete_collection",
+                "add_collection_asset",
+                "remove_collection_asset",
+                "update_collection_asset",
+                "refresh_collection_asset",
+                "create_verification",
+                "refresh_verification"
+              ]
+            },
+            "id": {
+              "type": "string",
+              "format": "uuid",
+              "description": "Opaque TokPortal resource ID. Never a provider task ID."
+            },
+            "data": {
+              "type": "object",
+              "additionalProperties": true
+            }
+          },
+          "required": [
+            "action"
+          ],
+          "additionalProperties": false,
+          "oneOf": [
+            {
+              "properties": {
+                "action": {
+                  "const": "cancel_job"
+                }
+              },
+              "required": [
+                "id"
+              ]
+            },
+            {
+              "properties": {
+                "action": {
+                  "const": "import_asset"
+                },
+                "data": {
+                  "type": "object",
+                  "properties": {
+                    "url": {
+                      "type": "string",
+                      "format": "uri"
+                    },
+                    "name": {
+                      "type": "string"
+                    },
+                    "collection_id": {
+                      "type": "string",
+                      "format": "uuid",
+                      "description": "Opaque TokPortal resource ID. Never a provider task ID."
+                    }
+                  },
+                  "required": [
+                    "url"
+                  ],
+                  "additionalProperties": false
+                }
+              },
+              "required": [
+                "data"
+              ]
+            },
+            {
+              "properties": {
+                "action": {
+                  "const": "create_upload"
+                },
+                "data": {
+                  "type": "object",
+                  "properties": {
+                    "filename": {
+                      "type": "string"
+                    },
+                    "content_type": {
+                      "type": "string"
+                    },
+                    "size_bytes": {
+                      "type": "integer",
+                      "minimum": 1
+                    }
+                  },
+                  "required": [
+                    "filename",
+                    "content_type",
+                    "size_bytes"
+                  ],
+                  "additionalProperties": false
+                }
+              },
+              "required": [
+                "data"
+              ]
+            },
+            {
+              "properties": {
+                "action": {
+                  "const": "complete_upload"
+                },
+                "data": {
+                  "type": "object",
+                  "properties": {
+                    "upload_id": {
+                      "type": "string",
+                      "format": "uuid",
+                      "description": "Opaque TokPortal resource ID. Never a provider task ID."
+                    }
+                  },
+                  "required": [
+                    "upload_id"
+                  ],
+                  "additionalProperties": false
+                }
+              },
+              "required": [
+                "data"
+              ]
+            },
+            {
+              "properties": {
+                "action": {
+                  "const": "update_asset"
+                },
+                "data": {
+                  "type": "object",
+                  "properties": {
+                    "name": {
+                      "type": "string"
+                    },
+                    "metadata": {
+                      "type": "object",
+                      "additionalProperties": true
+                    }
+                  },
+                  "required": [],
+                  "additionalProperties": false
+                }
+              },
+              "required": [
+                "id",
+                "data"
+              ]
+            },
+            {
+              "properties": {
+                "action": {
+                  "const": "delete_asset"
+                }
+              },
+              "required": [
+                "id"
+              ]
+            },
+            {
+              "properties": {
+                "action": {
+                  "const": "create_collection"
+                },
+                "data": {
+                  "type": "object",
+                  "properties": {
+                    "name": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 64
+                    },
+                    "description": {
+                      "type": "string",
+                      "maxLength": 300
+                    }
+                  },
+                  "required": [
+                    "name"
+                  ],
+                  "additionalProperties": false
+                }
+              },
+              "required": [
+                "data"
+              ]
+            },
+            {
+              "properties": {
+                "action": {
+                  "const": "update_collection"
+                },
+                "data": {
+                  "type": "object",
+                  "properties": {
+                    "name": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 64
+                    },
+                    "description": {
+                      "type": "string",
+                      "maxLength": 300
+                    }
+                  },
+                  "required": [
+                    "name"
+                  ],
+                  "additionalProperties": false
+                }
+              },
+              "required": [
+                "id",
+                "data"
+              ]
+            },
+            {
+              "properties": {
+                "action": {
+                  "const": "delete_collection"
+                }
+              },
+              "required": [
+                "id"
+              ]
+            },
+            {
+              "properties": {
+                "action": {
+                  "const": "add_collection_asset"
+                },
+                "data": {
+                  "type": "object",
+                  "properties": {
+                    "asset_id": {
+                      "type": "string",
+                      "format": "uuid",
+                      "description": "Opaque TokPortal resource ID. Never a provider task ID."
+                    }
+                  },
+                  "required": [
+                    "asset_id"
+                  ],
+                  "additionalProperties": false
+                }
+              },
+              "required": [
+                "id",
+                "data"
+              ]
+            },
+            {
+              "properties": {
+                "action": {
+                  "const": "remove_collection_asset"
+                },
+                "data": {
+                  "type": "object",
+                  "properties": {
+                    "asset_id": {
+                      "type": "string",
+                      "format": "uuid",
+                      "description": "Opaque TokPortal resource ID. Never a provider task ID."
+                    }
+                  },
+                  "required": [
+                    "asset_id"
+                  ],
+                  "additionalProperties": false
+                }
+              },
+              "required": [
+                "id",
+                "data"
+              ]
+            },
+            {
+              "properties": {
+                "action": {
+                  "const": "update_collection_asset"
+                },
+                "data": {
+                  "type": "object",
+                  "properties": {
+                    "asset_id": {
+                      "type": "string",
+                      "format": "uuid",
+                      "description": "Opaque TokPortal resource ID. Never a provider task ID."
+                    },
+                    "name": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 64
+                    }
+                  },
+                  "required": [
+                    "asset_id",
+                    "name"
+                  ],
+                  "additionalProperties": false
+                }
+              },
+              "required": [
+                "id",
+                "data"
+              ]
+            },
+            {
+              "properties": {
+                "action": {
+                  "const": "refresh_collection_asset"
+                },
+                "data": {
+                  "type": "object",
+                  "properties": {
+                    "asset_id": {
+                      "type": "string",
+                      "format": "uuid",
+                      "description": "Opaque TokPortal resource ID. Never a provider task ID."
+                    }
+                  },
+                  "required": [
+                    "asset_id"
+                  ],
+                  "additionalProperties": false
+                }
+              },
+              "required": [
+                "id",
+                "data"
+              ]
+            },
+            {
+              "properties": {
+                "action": {
+                  "const": "create_verification"
+                },
+                "data": {
+                  "type": "object",
+                  "properties": {
+                    "name": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 64
+                    },
+                    "description": {
+                      "type": "string",
+                      "maxLength": 300
+                    },
+                    "consent": {
+                      "const": true
+                    }
+                  },
+                  "required": [
+                    "name",
+                    "consent"
+                  ],
+                  "additionalProperties": false
+                }
+              },
+              "required": [
+                "data"
+              ]
+            },
+            {
+              "properties": {
+                "action": {
+                  "const": "refresh_verification"
+                }
+              },
+              "required": [
+                "id"
+              ]
+            }
+          ],
+          "description": "JSON request body."
+        },
+        "idempotency_key": {
+          "type": "string",
+          "description": "Required Idempotency-Key. Reuse with the identical request after an uncertain result; never issue a new key to retry spending."
+        }
+      },
+      "required": [
+        "body",
+        "idempotency_key"
+      ],
+      "additionalProperties": false
+    },
+    "annotations": {
+      "title": "Manage AI media, collections, cancellations and human verification",
+      "readOnlyHint": false,
+      "destructiveHint": true,
+      "idempotentHint": false,
+      "openWorldHint": true
+    },
+    "requiredFeature": "ai"
+  },
+  {
+    "name": "tokportal_ai_configure",
+    "operationId": "aiConfigure",
+    "description": "Configure AI permissions, budgets or automatic billing. Changes future spending authority. resource selects access or auto_topup. Require explicit user approval for enabling generation/billing or raising limits. Enabling automatic top-ups requires billing_consent:true. Never silently grant a key permissions or turn on recurring payments to make another operation succeed.",
+    "method": "PATCH",
+    "path": "/ai/configure",
+    "requestContentType": "application/json",
+    "multipartFields": [],
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "body": {
+          "type": "object",
+          "properties": {
+            "resource": {
+              "type": "string",
+              "enum": [
+                "access",
+                "auto_topup"
+              ]
+            },
+            "config": {
+              "type": "object",
+              "additionalProperties": true
+            }
+          },
+          "required": [
+            "resource",
+            "config"
+          ],
+          "additionalProperties": false,
+          "oneOf": [
+            {
+              "properties": {
+                "resource": {
+                  "const": "access"
+                },
+                "config": {
+                  "type": "object",
+                  "properties": {
+                    "enabled": {
+                      "type": "boolean"
+                    },
+                    "max_job_usd": {
+                      "type": "string",
+                      "pattern": "^(0|[1-9][0-9]*)(\\.[0-9]{1,6})?$",
+                      "example": "2.500000",
+                      "description": "Non-negative USD decimal string, up to six fractional digits. Never a credit count or binary floating-point amount."
+                    },
+                    "monthly_limit_usd": {
+                      "type": "string",
+                      "pattern": "^(0|[1-9][0-9]*)(\\.[0-9]{1,6})?$",
+                      "example": "2.500000",
+                      "description": "Non-negative USD decimal string, up to six fractional digits. Never a credit count or binary floating-point amount."
+                    },
+                    "consent": {
+                      "const": true
+                    },
+                    "consent_version": {
+                      "const": "ai-spend-v1"
+                    }
+                  },
+                  "required": [
+                    "enabled"
+                  ],
+                  "additionalProperties": false,
+                  "oneOf": [
+                    {
+                      "properties": {
+                        "enabled": {
+                          "const": false
+                        }
+                      }
+                    },
+                    {
+                      "properties": {
+                        "enabled": {
+                          "const": true
+                        }
+                      },
+                      "required": [
+                        "max_job_usd",
+                        "monthly_limit_usd",
+                        "consent",
+                        "consent_version"
+                      ]
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "properties": {
+                "resource": {
+                  "const": "auto_topup"
+                },
+                "config": {
+                  "type": "object",
+                  "properties": {
+                    "enabled": {
+                      "type": "boolean"
+                    },
+                    "threshold_usd": {
+                      "type": "string",
+                      "pattern": "^(0|[1-9][0-9]*)(\\.[0-9]{1,6})?$",
+                      "example": "2.500000",
+                      "description": "Non-negative USD decimal string, up to six fractional digits. Never a credit count or binary floating-point amount."
+                    },
+                    "amount_usd": {
+                      "type": "string",
+                      "pattern": "^(0|[1-9][0-9]*)(\\.[0-9]{1,6})?$",
+                      "example": "2.500000",
+                      "description": "Non-negative USD decimal string, up to six fractional digits. Never a credit count or binary floating-point amount."
+                    },
+                    "monthly_limit_usd": {
+                      "type": "string",
+                      "pattern": "^(0|[1-9][0-9]*)(\\.[0-9]{1,6})?$",
+                      "example": "2.500000",
+                      "description": "Non-negative USD decimal string, up to six fractional digits. Never a credit count or binary floating-point amount."
+                    },
+                    "billing_consent": {
+                      "const": true
+                    },
+                    "consent_version": {
+                      "const": "ai-auto-topup-v1"
+                    }
+                  },
+                  "required": [
+                    "enabled"
+                  ],
+                  "additionalProperties": false,
+                  "oneOf": [
+                    {
+                      "properties": {
+                        "enabled": {
+                          "const": false
+                        }
+                      }
+                    },
+                    {
+                      "properties": {
+                        "enabled": {
+                          "const": true
+                        }
+                      },
+                      "required": [
+                        "threshold_usd",
+                        "amount_usd",
+                        "monthly_limit_usd",
+                        "billing_consent",
+                        "consent_version"
+                      ]
+                    }
+                  ]
+                }
+              }
+            }
+          ],
+          "description": "JSON request body."
+        },
+        "idempotency_key": {
+          "type": "string",
+          "description": "Required Idempotency-Key. Reuse with the identical request after an uncertain result; never issue a new key to retry spending."
+        }
+      },
+      "required": [
+        "body",
+        "idempotency_key"
+      ],
+      "additionalProperties": false
+    },
+    "annotations": {
+      "title": "Configure AI permissions, budgets or automatic billing",
+      "readOnlyHint": false,
+      "destructiveHint": true,
+      "idempotentHint": false,
+      "openWorldHint": true
+    },
+    "requiredFeature": "ai"
   }
 ];

@@ -11,10 +11,12 @@ import {
 import {
   TOKPORTAL_BASE_URL,
   TOOLS,
+  discoverAiAvailability,
+  isToolFeatureEnabled,
   type McpToolDefinition,
 } from "./generated.js";
 
-const TOKPORTAL_MCP_VERSION = "1.15.1";
+const TOKPORTAL_MCP_VERSION = "1.18.0";
 const TOKPORTAL_CLIENT_HEADER = `tokportal-mcp/${TOKPORTAL_MCP_VERSION}`;
 
 const apiKey = process.env.TOKPORTAL_API_KEY;
@@ -67,9 +69,10 @@ function textContent(text: string) {
   };
 }
 
-function toolList() {
+async function toolList() {
+  const aiEnabled = await discoverAiAvailability(baseUrl, apiKey || "");
   return {
-    tools: TOOLS.map((tool) => ({
+    tools: TOOLS.filter((tool) => isToolFeatureEnabled(tool, aiEnabled)).map((tool) => ({
       name: tool.name,
       description: tool.description,
       inputSchema: tool.inputSchema,
@@ -253,6 +256,10 @@ async function callTool(name: string, args: Record<string, unknown>) {
   const tool = TOOLS.find((candidate) => candidate.name === name);
   if (!tool) {
     throw new Error(`Unknown tool: ${name}`);
+  }
+
+  if (tool.requiredFeature === "ai" && !await discoverAiAvailability(baseUrl, apiKey, true)) {
+    return { ...textContent("AI is not available for this workspace. No generation or payment was attempted. Existing TokPortal account tools remain available."), isError: true };
   }
 
   const split = splitArgs(tool, args);
