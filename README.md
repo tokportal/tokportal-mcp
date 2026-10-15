@@ -11,7 +11,7 @@ Docs https://developers.tokportal.com · API base https://app.tokportal.com/api/
 
 ---
 
-`tokportal-mcp` is the official [Model Context Protocol](https://modelcontextprotocol.io) server for the TokPortal API. Its 93 core tools remain available to Claude, Cursor, VS Code, Windsurf, Codex, Gemini CLI and other MCP clients. When AI is enabled for your workspace, seven additional curated tools cover model discovery, quoted generation, media management and the separate AI USD wallet. Model-specific schemas are fetched on demand, not exposed as hundreds of tools.
+`tokportal-mcp` is the official [Model Context Protocol](https://modelcontextprotocol.io) server for the TokPortal API. Its 99 core tools remain available to Claude, Cursor, VS Code, Windsurf, Codex, Gemini CLI and other MCP clients. When AI is enabled for your workspace, seven additional curated tools cover model discovery, quoted generation, media management and the separate AI USD wallet. Model-specific schemas are fetched on demand, not exposed as hundreds of tools.
 
 Two ways to use it:
 
@@ -25,7 +25,7 @@ Requires Node.js 20 or newer. The local server runs on it directly. Get an API k
 ## 30-second quickstart
 
 ```bash
-npm install -g tokportal-mcp@1.18.0
+npm install -g tokportal-mcp@1.19.0
 TOKPORTAL_API_KEY=sk_your_key_here tokportal-mcp
 ```
 
@@ -50,7 +50,7 @@ await client.connect(
   }),
 );
 
-const { tools } = await client.listTools(); // 93 core tools, plus 7 when AI is enabled
+const { tools } = await client.listTools(); // 99 core tools, plus 7 when AI is enabled
 const me = await client.callTool({ name: "tokportal_get_current_user", arguments: {} });
 console.log(tools.length, me.content[0].text);
 ```
@@ -200,7 +200,7 @@ The server exposes TokPortal API actions as MCP tools over stdio. It is generate
 - Multipart upload tools are generated from OpenAPI too. Binary fields are exposed as local path inputs such as `file_path`, with the remaining form fields exposed by their schema names.
 - Mutations accept an optional `idempotency_key` (sent as `Idempotency-Key`) except for secret-bearing operations (credential reveal, verification codes, webhook creation, signed upload URLs, report creation) which are never replayed.
 
-The MCP server sends `X-TokPortal-Client: tokportal-mcp/1.18.0` on API requests for observability and support diagnostics.
+The MCP server sends `X-TokPortal-Client: tokportal-mcp/1.19.0` on API requests for observability and support diagnostics.
 
 Failed tool calls return an error result with a `diagnostics` object containing `request_id`, `retry_after_seconds`, and `rate_limit` when those headers are available.
 
@@ -240,3 +240,9 @@ MIT © TokPortal
 ## Connected analytics (1.18.0)
 
 Use `tokportal_get_analytics_account_insights` with `{ "id": "saved-account-uuid" }` to read Instagram account-period reach/views/engagement and eligible TikTok post watch time/completion/traffic data. Requires Creator or above; existing tiers remain enforced. A disconnected or unverified account returns `available: false` with `connected_analytics: null`. This is read-only and never starts a refresh. Missing metrics are omitted, completion is a 0–1 fraction, traffic/audience splits are 0–100 percentages, and watch times are seconds. The same block appears on `tokportal_get_analytics_account`. [Full contract](https://developers.tokportal.com/analytics/#connected-instagram-and-tiktok-insights).
+
+## Inbox actions and Business setup (1.19.0)
+
+Read scoped received comments and Instagram messages with `tokportal_get_account_inbox`. Reply publicly with `tokportal_create_account_comment_reply` (0 credits, requires a signed reply capability, stable request key, current Coverage and account quota). Check delivery with `tokportal_get_account_comment_reply`; never blindly resend an unknown result.
+
+`tokportal_get_account_business_setup` reads progression; `tokportal_request_account_business_setup` orders the manager task for 5 credits once per Instagram account, after explicit music-limit acknowledgment. New-account creation tools accept `wants_instagram_business` (+5 credits per new Instagram account). TikTok DMs are unavailable. Public metadata webhooks notify connection, incoming activity, reply result and Business task changes. See the Connection & Inbox guide for contracts and limits.

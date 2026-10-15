@@ -205,7 +205,7 @@ export const TOOLS: McpToolDefinition[] = [
   {
     "name": "tokportal_reactivate_account_managed_subscription",
     "operationId": "reactivateAccountManagedSubscription",
-    "description": "Reactivate TokPortal Coverage. Reactivates TokPortal Coverage from an explicit GET snapshot, and debits the projected unpaid 30-day periods — read the quote from getAccountManagedSubscription and confirm the amount with the user first. Reactivation is free while the current billing period is already paid or included; Coverage benefits and tasks remain paused until reactivation. At and after current_period_end, the endpoint accepts the effective lapsed state even if recorded_status has not yet been updated by the renewal worker, and charges exactly the projected unpaid periods without adding an extra period. The expected credits, period end, and lock version are checked atomically before any debit or task resume. Scheduled videos receive new future dates while preserving their cadence.",
+    "description": "Reactivate TokPortal Coverage. Reactivates TokPortal Coverage from an explicit GET snapshot, and debits the projected unpaid 30-day periods — read the quote from getAccountManagedSubscription and confirm the amount with the user first. Reactivation is free while the current billing period is already paid or included. After cancellation, access continues through the current paid period if no overdue Coverage is unpaid. After it expires, account features stay unavailable until Coverage is restored. At and after current_period_end, the endpoint accepts the effective lapsed state even if recorded_status has not yet been updated by the renewal worker, and charges exactly the projected unpaid periods without adding an extra period. The expected credits, period end, and lock version are checked atomically before any debit or task resume. Scheduled videos receive new future dates while preserving their cadence.",
     "method": "POST",
     "path": "/accounts/{id}/managed-subscription/reactivate",
     "requestContentType": "application/json",
@@ -273,7 +273,7 @@ export const TOOLS: McpToolDefinition[] = [
   {
     "name": "tokportal_cancel_account_managed_subscription",
     "operationId": "cancelAccountManagedSubscription",
-    "description": "Pause TokPortal Coverage. Immediately blocks new and ongoing TokPortal work for the account. Payments are not refunded. If a paid or included current period remains, reactivation is free until its original end. Otherwise it costs exactly the unpaid 30-day periods at the rate returned by the Coverage status endpoint.",
+    "description": "Pause TokPortal Coverage. Stops renewal without refunding payments. Account actions and analytics remain available through the paid/included period if no overdue Coverage is unpaid. Afterwards they are blocked until Coverage is restored; after 30 days of unavailability the API connection is removed. Resuming renewal during the current paid period is free. Otherwise reactivation costs exactly the unpaid 30-day periods shown by the Coverage status endpoint.",
     "method": "POST",
     "path": "/accounts/{id}/managed-subscription/cancel",
     "requestContentType": null,
@@ -518,6 +518,11 @@ export const TOOLS: McpToolDefinition[] = [
             "bundle_type"
           ],
           "properties": {
+            "wants_instagram_business": {
+              "type": "boolean",
+              "default": false,
+              "description": "New Instagram accounts only. Adds 5 credits, requests a manager Business setup after creation, and acknowledges restricted commercial music access."
+            },
             "bundle_type": {
               "type": "string",
               "enum": [
@@ -682,6 +687,11 @@ export const TOOLS: McpToolDefinition[] = [
             "accounts_count"
           ],
           "properties": {
+            "wants_instagram_business": {
+              "type": "boolean",
+              "default": false,
+              "description": "Apply Business setup to every new Instagram account only, adding 5 credits each. Requires Instagram in platforms and acknowledges restricted commercial music access."
+            },
             "platforms": {
               "type": "array",
               "minItems": 1,
@@ -2649,6 +2659,293 @@ export const TOOLS: McpToolDefinition[] = [
     }
   },
   {
+    "name": "tokportal_get_account_connection",
+    "operationId": "getAccountConnection",
+    "description": "Check the API connection of an account. Returns the current API connection state, checked_at, recovery action and separate feature eligibility. Ownership and current expected identity are checked. A fresh server check may be reused for up to 60 seconds and is invalidated by a newer disconnection event. An unavailable provider returns state checking, never a false disconnection. Messaging configuration eligible is not proof of an open reply window or successful send. This read does not create tasks or charge credits.",
+    "method": "GET",
+    "path": "/accounts/{id}/connection",
+    "requestContentType": null,
+    "multipartFields": [],
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "format": "uuid",
+          "description": "Saved account ID."
+        }
+      },
+      "required": [
+        "id"
+      ],
+      "additionalProperties": false
+    },
+    "annotations": {
+      "title": "Check the API connection of an account",
+      "readOnlyHint": true,
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false
+    }
+  },
+  {
+    "name": "tokportal_get_account_inbox",
+    "operationId": "getAccountInbox",
+    "description": "Read account messages or comments. Read-only inbox for one owned account with active API connection and eligible TokPortal Coverage. Posts/comments work for eligible Instagram and TikTok connections; conversations/messages currently require an eligible Instagram Business setup. First list posts or conversations, then pass the returned opaque reference for comments or messages. To read comment replies, keep the post reference and pass the comment's reference as reply_reference. References and pagination cursors expire after one hour and are bound to the account, connection and resource. Refresh the parent list on inbox_reference_expired_or_invalid. Messages are newest first; reading never marks them as read. Comments may be cached upstream for 10 minutes. Replayed Instagram DM history is limited to the latest 500 conversations and 500 messages per conversation. This endpoint does not send, reply, moderate, create automations or charge credits. The separate /comments routes are paid human commenting tasks. Subscribe to inbox.comment.received and inbox.message.received for metadata notifications, then fetch this scoped endpoint. Public replies use POST /accounts/{id}/inbox/replies with reply_action_reference; this GET remains read-only.",
+    "method": "GET",
+    "path": "/accounts/{id}/inbox",
+    "requestContentType": null,
+    "multipartFields": [],
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "format": "uuid",
+          "description": "Saved account ID."
+        },
+        "kind": {
+          "type": "string",
+          "enum": [
+            "posts",
+            "comments",
+            "conversations",
+            "messages"
+          ],
+          "default": "posts",
+          "description": "Which inbox resource to read."
+        },
+        "reference": {
+          "type": "string",
+          "maxLength": 16000,
+          "description": "Opaque reference from a listed post or conversation. Required for comments and messages."
+        },
+        "reply_reference": {
+          "type": "string",
+          "maxLength": 16000,
+          "description": "Opaque comment reference for reading its replies. Only for kind=comments, with the original post reference."
+        },
+        "cursor": {
+          "type": "string",
+          "maxLength": 16000,
+          "description": "Pass pagination.next_cursor verbatim with the same kind and references."
+        },
+        "limit": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 50,
+          "default": 20,
+          "description": "Page size."
+        },
+        "min_comments": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 1,
+          "description": "For kind=posts: 1 hides posts with no comments, 0 includes them (default). Filtering is applied after pagination: keep following next_cursor even on empty pages. Keep the same filter when paging."
+        }
+      },
+      "required": [
+        "id"
+      ],
+      "additionalProperties": false
+    },
+    "annotations": {
+      "title": "Read account messages or comments",
+      "readOnlyHint": true,
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false
+    }
+  },
+  {
+    "name": "tokportal_create_account_comment_reply",
+    "operationId": "createAccountCommentReply",
+    "description": "Reply to a received comment. Reply publicly to one received comment on an owned Instagram or TikTok post. Costs 0 credits and never renews Coverage. Requires active Coverage, verified connection and can_reply=true. Fetch posts, then comments; pass the post reference and the comment reply_action_reference. The body request_key UUID must remain identical on an exact retry. Account leases and provider quotas apply; honor Retry-After. A succeeded operation has a reply_id. pending/unknown means delivery is unconfirmed: fetch operation status and the comment thread, never blindly resend. Dry-run validates without sending. TikTok max 150 characters, Instagram max 2200.",
+    "method": "POST",
+    "path": "/accounts/{id}/inbox/replies",
+    "requestContentType": "application/json",
+    "multipartFields": [],
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "format": "uuid",
+          "description": "Saved account ID."
+        },
+        "body": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "post_reference",
+            "comment_reference",
+            "text",
+            "request_key"
+          ],
+          "properties": {
+            "post_reference": {
+              "type": "string",
+              "maxLength": 16000
+            },
+            "comment_reference": {
+              "type": "string",
+              "maxLength": 16000
+            },
+            "text": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 2200
+            },
+            "request_key": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          "description": "JSON request body."
+        },
+        "idempotency_key": {
+          "type": "string",
+          "description": "Optional Idempotency-Key header for safe retries."
+        },
+        "dry_run": {
+          "type": "boolean",
+          "description": "Simulate this call: full validation and the real price, but nothing is created, no credits are debited, and no Idempotency-Key is consumed. Returned identifiers are synthetic and only usable in other dry-run calls."
+        }
+      },
+      "required": [
+        "id",
+        "body"
+      ],
+      "additionalProperties": false
+    },
+    "annotations": {
+      "title": "Reply to a received comment",
+      "readOnlyHint": false,
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": true
+    }
+  },
+  {
+    "name": "tokportal_get_account_comment_reply",
+    "operationId": "getAccountCommentReply",
+    "description": "Read a comment reply result. Owner-scoped durable delivery state: pending, succeeded, failed, rate_limited or unknown. No reply text or private credentials returned. Never automatically resend an unknown outcome.",
+    "method": "GET",
+    "path": "/accounts/{id}/inbox/replies/{replyId}",
+    "requestContentType": null,
+    "multipartFields": [],
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "format": "uuid",
+          "description": "Saved account ID."
+        },
+        "replyId": {
+          "type": "string",
+          "format": "uuid",
+          "description": "Reply operation ID."
+        }
+      },
+      "required": [
+        "id",
+        "replyId"
+      ],
+      "additionalProperties": false
+    },
+    "annotations": {
+      "title": "Read a comment reply result",
+      "readOnlyHint": true,
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false
+    }
+  },
+  {
+    "name": "tokportal_get_account_business_setup",
+    "operationId": "getAccountBusinessSetup",
+    "description": "Read Instagram Business setup progress. Client task status and 5-credit price. Manager compensation and private diagnostics are never returned. Completion verifies account identity, Business status, fresh authorization and messaging permissions; it does not prove that every recipient can receive a message.",
+    "method": "GET",
+    "path": "/accounts/{id}/business-setup",
+    "requestContentType": null,
+    "multipartFields": [],
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "format": "uuid",
+          "description": "Saved account ID."
+        }
+      },
+      "required": [
+        "id"
+      ],
+      "additionalProperties": false
+    },
+    "annotations": {
+      "title": "Read Instagram Business setup progress",
+      "readOnlyHint": true,
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false
+    }
+  },
+  {
+    "name": "tokportal_request_account_business_setup",
+    "operationId": "requestAccountBusinessSetup",
+    "description": "Order Instagram Business setup. Requests a manager conversion and fresh connection for 5 credits, once per saved account. Requires write scope, active Coverage and current manager. Existing requests replay without a second debit; accounts already Business are not charged. Explicitly acknowledge restricted commercial music access. Manager payout is separate. Dry-run validates without charging or assigning a task.",
+    "method": "POST",
+    "path": "/accounts/{id}/business-setup",
+    "requestContentType": "application/json",
+    "multipartFields": [],
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "format": "uuid",
+          "description": "Saved account ID."
+        },
+        "body": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "music_limitations_acknowledged"
+          ],
+          "properties": {
+            "music_limitations_acknowledged": {
+              "type": "boolean",
+              "const": true
+            }
+          },
+          "description": "JSON request body."
+        },
+        "idempotency_key": {
+          "type": "string",
+          "description": "Optional Idempotency-Key header for safe retries."
+        },
+        "dry_run": {
+          "type": "boolean",
+          "description": "Simulate this call: full validation and the real price, but nothing is created, no credits are debited, and no Idempotency-Key is consumed. Returned identifiers are synthetic and only usable in other dry-run calls."
+        }
+      },
+      "required": [
+        "id",
+        "body"
+      ],
+      "additionalProperties": false
+    },
+    "annotations": {
+      "title": "Order Instagram Business setup",
+      "readOnlyHint": false,
+      "destructiveHint": true,
+      "idempotentHint": true,
+      "openWorldHint": true
+    }
+  },
+  {
     "name": "tokportal_update_account_commenting_profile",
     "operationId": "updateAccountCommentingProfile",
     "description": "Update account commenting profile. Sets the internal commenting-autopilot metadata (niche, persona, goal, language, tracked handles) that TokPortal uses to draft comments for this account. It NEVER changes the account's public profile — use createAccountEditRequest to change a delivered account's username, visible name, biography, picture or link. The account must belong to the API key owner and must have active TokPortal Coverage, unless it is permanently grandfathered. Revealed/detached, banned, paused, lapsed and unrecoverable accounts are read-only.",
@@ -3479,6 +3776,15 @@ export const TOOLS: McpToolDefinition[] = [
                 "type": "string",
                 "enum": [
                   "webhook.test",
+                  "account.connection.connected",
+                  "account.connection.disconnected",
+                  "account.connection.removed",
+                  "account.business_setup.requested",
+                  "account.business_setup.updated",
+                  "account.business_setup.completed",
+                  "inbox.comment.received",
+                  "inbox.message.received",
+                  "inbox.comment.reply.updated",
                   "bundle.created",
                   "bundle.published",
                   "bundle.cancelled",
@@ -3608,6 +3914,15 @@ export const TOOLS: McpToolDefinition[] = [
                 "type": "string",
                 "enum": [
                   "webhook.test",
+                  "account.connection.connected",
+                  "account.connection.disconnected",
+                  "account.connection.removed",
+                  "account.business_setup.requested",
+                  "account.business_setup.updated",
+                  "account.business_setup.completed",
+                  "inbox.comment.received",
+                  "inbox.message.received",
+                  "inbox.comment.reply.updated",
                   "bundle.created",
                   "bundle.published",
                   "bundle.cancelled",
