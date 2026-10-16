@@ -16,7 +16,7 @@ import {
   type McpToolDefinition,
 } from "./generated.js";
 
-const TOKPORTAL_MCP_VERSION = "1.19.0";
+const TOKPORTAL_MCP_VERSION = "1.19.1";
 const TOKPORTAL_CLIENT_HEADER = `tokportal-mcp/${TOKPORTAL_MCP_VERSION}`;
 
 const apiKey = process.env.TOKPORTAL_API_KEY;
