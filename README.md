@@ -25,7 +25,7 @@ Requires Node.js 20 or newer. The local server runs on it directly. Get an API k
 ## 30-second quickstart
 
 ```bash
-npm install -g tokportal-mcp@1.20.0
+npm install -g tokportal-mcp@1.20.1
 TOKPORTAL_API_KEY=sk_your_key_here tokportal-mcp
 ```
 
@@ -200,7 +200,7 @@ The server exposes TokPortal API actions as MCP tools over stdio. It is generate
 - Multipart upload tools are generated from OpenAPI too. Binary fields are exposed as local path inputs such as `file_path`, with the remaining form fields exposed by their schema names.
 - Mutations accept an optional `idempotency_key` (sent as `Idempotency-Key`) except for secret-bearing operations (credential reveal, verification codes, webhook creation, signed upload URLs, report creation) which are never replayed.
 
-The MCP server sends `X-TokPortal-Client: tokportal-mcp/1.20.0` on API requests for observability and support diagnostics.
+The MCP server sends `X-TokPortal-Client: tokportal-mcp/1.20.1` on API requests for observability and support diagnostics.
 
 Failed tool calls return an error result with a `diagnostics` object containing `request_id`, `retry_after_seconds`, and `rate_limit` when those headers are available.
 

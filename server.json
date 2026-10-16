@@ -3,7 +3,7 @@
   "name": "com.tokportal/mcp",
   "title": "TokPortal",
   "description": "Managed TikTok/Instagram accounts, analytics, Inbox replies, Business setup and API tools.",
-  "version": "1.20.0",
+  "version": "1.20.1",
   "websiteUrl": "https://developers.tokportal.com/mcp",
   "repository": {
     "url": "https://github.com/tokportal/tokportal-mcp",
@@ -20,7 +20,7 @@
       "registryType": "npm",
       "registryBaseUrl": "https://registry.npmjs.org",
       "identifier": "tokportal-mcp",
-      "version": "1.20.0",
+      "version": "1.20.1",
       "transport": {
         "type": "stdio"
       },
