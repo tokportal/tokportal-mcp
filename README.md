@@ -25,7 +25,7 @@ Requires Node.js 20 or newer. The local server runs on it directly. Get an API k
 ## 30-second quickstart
 
 ```bash
-npm install -g tokportal-mcp@1.19.0
+npm install -g tokportal-mcp@1.20.0
 TOKPORTAL_API_KEY=sk_your_key_here tokportal-mcp
 ```
 
@@ -200,7 +200,7 @@ The server exposes TokPortal API actions as MCP tools over stdio. It is generate
 - Multipart upload tools are generated from OpenAPI too. Binary fields are exposed as local path inputs such as `file_path`, with the remaining form fields exposed by their schema names.
 - Mutations accept an optional `idempotency_key` (sent as `Idempotency-Key`) except for secret-bearing operations (credential reveal, verification codes, webhook creation, signed upload URLs, report creation) which are never replayed.
 
-The MCP server sends `X-TokPortal-Client: tokportal-mcp/1.19.0` on API requests for observability and support diagnostics.
+The MCP server sends `X-TokPortal-Client: tokportal-mcp/1.20.0` on API requests for observability and support diagnostics.
 
 Failed tool calls return an error result with a `diagnostics` object containing `request_id`, `retry_after_seconds`, and `rate_limit` when those headers are available.
 
@@ -247,7 +247,7 @@ Read scoped received comments and Instagram messages with `tokportal_get_account
 
 `tokportal_get_account_business_setup` reads progression; `tokportal_request_account_business_setup` orders the manager task for 5 credits once per Instagram account, after explicit music-limit acknowledgment. New-account creation tools accept `wants_instagram_business` (+5 credits per new Instagram account). TikTok DMs are unavailable. Public metadata webhooks notify connection, incoming activity, reply result and Business task changes. See the Connection & Inbox guide for contracts and limits.
 
-Instagram Inbox reads accept eligible Creator and Business professional accounts,
-with messaging permissions and no current restriction. Business conversion is
-optional and is not universally required for Creator messaging. DM sends and
-private replies are not yet exposed by this package.
+### Keyword comment moderation
+
+`tokportal_get_account_comment_moderation` reads account rules and result history.
+`tokportal_update_account_comment_moderation` saves explicit keyword/exception rules for Instagram and TikTok. Read the settings version first. Disabled by default; no DM or credit charge. Only new comments are processed after saving. TikTok unhide is currently unreliable, and disabling rules does not restore hidden comments. Use `dry_run: true` to validate without saving.

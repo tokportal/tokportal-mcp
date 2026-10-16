@@ -2758,6 +2758,126 @@ export const TOOLS: McpToolDefinition[] = [
     }
   },
   {
+    "name": "tokportal_get_account_comment_moderation",
+    "operationId": "getAccountCommentModeration",
+    "description": "Read comment moderation rules and history. Owner-scoped keyword hiding rules and the latest 20 processing results for Instagram or TikTok. Disabled by default. No private comment text is stored or returned. Use next_cursor to read older history. post_reference opens the owned comment thread using GET inbox kind=comments. Reading never hides or sends anything.",
+    "method": "GET",
+    "path": "/accounts/{id}/inbox/moderation",
+    "requestContentType": null,
+    "multipartFields": [],
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "format": "uuid",
+          "description": "Saved account ID."
+        },
+        "cursor": {
+          "type": "string",
+          "maxLength": 150,
+          "description": "Opaque history next_cursor; omit for the latest page."
+        }
+      },
+      "required": [
+        "id"
+      ],
+      "additionalProperties": false
+    },
+    "annotations": {
+      "title": "Read comment moderation rules and history",
+      "readOnlyHint": true,
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false
+    }
+  },
+  {
+    "name": "tokportal_update_account_comment_moderation",
+    "operationId": "updateAccountCommentModeration",
+    "description": "Configure automatic keyword comment hiding. Set keyword moderation for one owned Instagram or TikTok account. No DMs or credit charge. GET first, then pass settings.version for optimistic concurrency; a stale version returns moderation_version_conflict. Enabling requires a verified connection, comment access and usable Coverage. Disabling is always allowed for the owner. New signed comment events after saving are matched case-insensitively using Unicode NFKC; exceptions take priority, own comments are skipped. Whole-word mode treats letters, numbers and underscore as word characters. Hiding runs asynchronously after publication, normally immediately, with a five-minute recovery worker; comments can be visible before hiding. It cannot guarantee pre-publication filtering or delivery of every upstream webhook. Prior comments are not scanned. Rule changes cancel waiting older jobs. Provider quotas and shared per-account leases apply; only explicit 429 refusals retry automatically (max 3 attempts). Unknown writes are never resent automatically. Turning rules off does not restore hidden comments; TikTok unhide is currently unreliable. Dry-run validates without saving or hiding.",
+    "method": "PUT",
+    "path": "/accounts/{id}/inbox/moderation",
+    "requestContentType": "application/json",
+    "multipartFields": [],
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "format": "uuid",
+          "description": "Saved account ID."
+        },
+        "body": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "enabled",
+            "keywords",
+            "exceptions",
+            "match_mode",
+            "version"
+          ],
+          "properties": {
+            "enabled": {
+              "type": "boolean"
+            },
+            "keywords": {
+              "type": "array",
+              "maxItems": 100,
+              "items": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 80
+              }
+            },
+            "exceptions": {
+              "type": "array",
+              "maxItems": 100,
+              "items": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 80
+              }
+            },
+            "match_mode": {
+              "type": "string",
+              "enum": [
+                "word",
+                "contains"
+              ]
+            },
+            "version": {
+              "type": "integer",
+              "minimum": 0
+            }
+          },
+          "description": "JSON request body."
+        },
+        "idempotency_key": {
+          "type": "string",
+          "description": "Optional Idempotency-Key header for safe retries."
+        },
+        "dry_run": {
+          "type": "boolean",
+          "description": "Simulate this call: full validation and the real price, but nothing is created, no credits are debited, and no Idempotency-Key is consumed. Returned identifiers are synthetic and only usable in other dry-run calls."
+        }
+      },
+      "required": [
+        "id",
+        "body"
+      ],
+      "additionalProperties": false
+    },
+    "annotations": {
+      "title": "Configure automatic keyword comment hiding",
+      "readOnlyHint": false,
+      "destructiveHint": true,
+      "idempotentHint": true,
+      "openWorldHint": true
+    }
+  },
+  {
     "name": "tokportal_create_account_comment_reply",
     "operationId": "createAccountCommentReply",
     "description": "Reply to a received comment. Reply publicly to one received comment on an owned Instagram or TikTok post. Costs 0 credits and never renews Coverage. Requires active Coverage, verified connection and can_reply=true. Fetch posts, then comments; pass the post reference and the comment reply_action_reference. The body request_key UUID must remain identical on an exact retry. Account leases and provider quotas apply; honor Retry-After. A succeeded operation has a reply_id. pending/unknown means delivery is unconfirmed: fetch operation status and the comment thread, never blindly resend. Dry-run validates without sending. TikTok max 150 characters, Instagram max 2200.",
@@ -3785,6 +3905,7 @@ export const TOOLS: McpToolDefinition[] = [
                   "inbox.comment.received",
                   "inbox.message.received",
                   "inbox.comment.reply.updated",
+                  "inbox.comment.moderation.updated",
                   "bundle.created",
                   "bundle.published",
                   "bundle.cancelled",
@@ -3923,6 +4044,7 @@ export const TOOLS: McpToolDefinition[] = [
                   "inbox.comment.received",
                   "inbox.message.received",
                   "inbox.comment.reply.updated",
+                  "inbox.comment.moderation.updated",
                   "bundle.created",
                   "bundle.published",
                   "bundle.cancelled",
