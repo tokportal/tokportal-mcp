@@ -11,7 +11,7 @@ Docs https://developers.tokportal.com · API base https://app.tokportal.com/api/
 
 ---
 
-`tokportal-mcp` is the official [Model Context Protocol](https://modelcontextprotocol.io) server for the TokPortal API. Its 99 core tools remain available to Claude, Cursor, VS Code, Windsurf, Codex, Gemini CLI and other MCP clients. When AI is enabled for your workspace, seven additional curated tools cover model discovery, quoted generation, media management and the separate AI USD wallet. Model-specific schemas are fetched on demand, not exposed as hundreds of tools.
+`tokportal-mcp` is the official [Model Context Protocol](https://modelcontextprotocol.io) server for the TokPortal API. Its core tools remain available to Claude, Cursor, VS Code, Windsurf, Codex, Gemini CLI and other MCP clients. When AI is enabled for your workspace, seven additional curated tools cover model discovery, quoted generation, media management and the separate AI USD wallet. Model-specific schemas are fetched on demand, not exposed as hundreds of tools.
 
 Two ways to use it:
 
@@ -25,7 +25,7 @@ Requires Node.js 20 or newer. The local server runs on it directly. Get an API k
 ## 30-second quickstart
 
 ```bash
-npm install -g tokportal-mcp@1.20.1
+npm install -g tokportal-mcp@1.21.0
 TOKPORTAL_API_KEY=sk_your_key_here tokportal-mcp
 ```
 
@@ -50,7 +50,7 @@ await client.connect(
   }),
 );
 
-const { tools } = await client.listTools(); // 99 core tools, plus 7 when AI is enabled
+const { tools } = await client.listTools(); // Core tools, plus 7 when AI is enabled
 const me = await client.callTool({ name: "tokportal_get_current_user", arguments: {} });
 console.log(tools.length, me.content[0].text);
 ```
@@ -200,7 +200,7 @@ The server exposes TokPortal API actions as MCP tools over stdio. It is generate
 - Multipart upload tools are generated from OpenAPI too. Binary fields are exposed as local path inputs such as `file_path`, with the remaining form fields exposed by their schema names.
 - Mutations accept an optional `idempotency_key` (sent as `Idempotency-Key`) except for secret-bearing operations (credential reveal, verification codes, webhook creation, signed upload URLs, report creation) which are never replayed.
 
-The MCP server sends `X-TokPortal-Client: tokportal-mcp/1.20.1` on API requests for observability and support diagnostics.
+The MCP server sends `X-TokPortal-Client: tokportal-mcp/1.21.0` on API requests for observability and support diagnostics.
 
 Failed tool calls return an error result with a `diagnostics` object containing `request_id`, `retry_after_seconds`, and `rate_limit` when those headers are available.
 
@@ -251,3 +251,22 @@ Read scoped received comments and Instagram messages with `tokportal_get_account
 
 `tokportal_get_account_comment_moderation` reads account rules and result history.
 `tokportal_update_account_comment_moderation` saves explicit keyword/exception rules for Instagram and TikTok. Read the settings version first. Disabled by default; no DM or credit charge. Only new comments are processed after saving. TikTok unhide is currently unreliable, and disabling rules does not restore hidden comments. Use `dry_run: true` to validate without saving.
+
+### Instagram messaging and comment-to-DM
+
+Use `tokportal_send_account_inbox_message` for replies in an existing Instagram
+conversation within 24 hours of an incoming message. Use
+`tokportal_create_account_private_reply` once per comment within seven days.
+Creator and Business are eligible when connection permissions allow. Fetch
+account-bound references through `tokportal_get_account_inbox`; arbitrary
+recipient IDs are not accepted. These actions currently charge no credits.
+
+`tokportal_get_account_comment_dm` and `tokportal_update_account_comment_dm`
+manage one opt-in keyword rule per account, optionally scoped to an owned post.
+Rules start disabled, process only new original comments and expose durable
+history. Shared account cooldowns, Coverage, strict identity checks and durable
+request-key dedupe apply. Unknown delivery must never trigger a blind resend.
+Use `tokportal_get_account_message_operation` for status. A private reply alone
+does not permit follow-up DMs. TikTok DMs are not offered.
+
+Full guide: https://developers.tokportal.com/account-connection-inbox

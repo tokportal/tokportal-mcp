@@ -1,6 +1,6 @@
 {
   "name": "tokportal-mcp",
-  "version": "1.20.1",
+  "version": "1.21.0",
   "description": "Public MCP server for the TokPortal API.",
   "mcpName": "com.tokportal/mcp",
   "homepage": "https://developers.tokportal.com/sdks-cli",

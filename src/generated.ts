@@ -83,6 +83,311 @@ export async function discoverAiAvailability(baseUrl: string, apiKey: string, fr
 // prettier-ignore
 export const TOOLS: McpToolDefinition[] = [
   {
+    "name": "tokportal_send_account_inbox_message",
+    "operationId": "sendAccountInboxMessage",
+    "description": "Reply to an Instagram direct message. Send plain text in an existing owned Instagram conversation, on an eligible Creator or Business connection. No Facebook Page. Costs 0 credits for this release. Supply the conversation reference from GET inbox kind=conversations. Requires write access, current Coverage, live messaging permissions and an incoming message in the past 24 hours; no cold outreach. The server verifies the latest 100 messages and refuses without positive window proof. Keep request_key unchanged for an exact retry. Shared account leases and provider quotas apply. pending/unknown is not success and must not be resent; inspect GET operation and thread. succeeded means the provider returned a message ID, not recipient delivery or reading. Dry-run validates without sending.",
+    "method": "POST",
+    "path": "/accounts/{id}/inbox/messages",
+    "requestContentType": "application/json",
+    "multipartFields": [],
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "format": "uuid",
+          "description": "Saved account ID."
+        },
+        "body": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "text",
+            "request_key",
+            "conversation_reference"
+          ],
+          "properties": {
+            "text": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 1000
+            },
+            "request_key": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "conversation_reference": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 16000
+            }
+          },
+          "description": "JSON request body."
+        },
+        "idempotency_key": {
+          "type": "string",
+          "description": "Optional Idempotency-Key header for safe retries."
+        },
+        "dry_run": {
+          "type": "boolean",
+          "description": "Simulate this call: full validation and the real price, but nothing is created, no credits are debited, and no Idempotency-Key is consumed. Returned identifiers are synthetic and only usable in other dry-run calls."
+        }
+      },
+      "required": [
+        "id",
+        "body"
+      ],
+      "additionalProperties": false
+    },
+    "annotations": {
+      "title": "Reply to an Instagram direct message",
+      "readOnlyHint": false,
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": true
+    }
+  },
+  {
+    "name": "tokportal_create_account_private_reply",
+    "operationId": "createAccountPrivateReply",
+    "description": "Send a comment-to-DM private reply. Send one plain-text private Instagram reply to a new received comment on an owned post, within seven days. Creator and Business are supported with comment access. Costs 0 credits. Pass the post reference and comment private_reply_action_reference. No TikTok DMs. Hidden, own, stale or unverifiable comments are refused. This consumes the single private reply for the comment; another key or changed wording cannot resend it. A platform refusal may consume it too. The recipient must send an incoming message before follow-up DMs; a private reply does not open a 24-hour window. Use a stable request_key, honor Retry-After and never retry unknown delivery blindly. Dry-run validates without sending.",
+    "method": "POST",
+    "path": "/accounts/{id}/inbox/private-replies",
+    "requestContentType": "application/json",
+    "multipartFields": [],
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "format": "uuid",
+          "description": "Saved account ID."
+        },
+        "body": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "text",
+            "request_key",
+            "post_reference",
+            "comment_reference"
+          ],
+          "properties": {
+            "text": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 1000
+            },
+            "request_key": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "post_reference": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 16000
+            },
+            "comment_reference": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 16000
+            }
+          },
+          "description": "JSON request body."
+        },
+        "idempotency_key": {
+          "type": "string",
+          "description": "Optional Idempotency-Key header for safe retries."
+        },
+        "dry_run": {
+          "type": "boolean",
+          "description": "Simulate this call: full validation and the real price, but nothing is created, no credits are debited, and no Idempotency-Key is consumed. Returned identifiers are synthetic and only usable in other dry-run calls."
+        }
+      },
+      "required": [
+        "id",
+        "body"
+      ],
+      "additionalProperties": false
+    },
+    "annotations": {
+      "title": "Send a comment-to-DM private reply",
+      "readOnlyHint": false,
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": true
+    }
+  },
+  {
+    "name": "tokportal_get_account_message_operation",
+    "operationId": "getAccountMessageOperation",
+    "description": "Read a DM or private-reply result. Read the durable, owner-scoped operation state. A stale pending operation becomes unknown after two minutes, with no resend. Native message content and provider credentials are not returned.",
+    "method": "GET",
+    "path": "/accounts/{id}/inbox/operations/{operationId}",
+    "requestContentType": null,
+    "multipartFields": [],
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "format": "uuid",
+          "description": "Saved account ID."
+        },
+        "operationId": {
+          "type": "string",
+          "format": "uuid",
+          "description": "path parameter operationId"
+        }
+      },
+      "required": [
+        "id",
+        "operationId"
+      ],
+      "additionalProperties": false
+    },
+    "annotations": {
+      "title": "Read a DM or private-reply result",
+      "readOnlyHint": true,
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false
+    }
+  },
+  {
+    "name": "tokportal_get_account_comment_dm",
+    "operationId": "getAccountCommentDm",
+    "description": "Read comment-to-DM rules and history. Read one account rule and the latest 20 job results. Instagram only. Disabled by default. GET settings.version before editing. The optional post_reference is freshly signed for the saved post scope. next_cursor reads older history. No comment or DM bodies are retained in job history; the owner-configured message template is returned in settings.",
+    "method": "GET",
+    "path": "/accounts/{id}/inbox/comment-to-dm",
+    "requestContentType": null,
+    "multipartFields": [],
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "format": "uuid",
+          "description": "Saved account ID."
+        },
+        "cursor": {
+          "type": "string",
+          "maxLength": 150,
+          "description": "query parameter cursor"
+        }
+      },
+      "required": [
+        "id"
+      ],
+      "additionalProperties": false
+    },
+    "annotations": {
+      "title": "Read comment-to-DM rules and history",
+      "readOnlyHint": true,
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false
+    }
+  },
+  {
+    "name": "tokportal_update_account_comment_dm",
+    "operationId": "updateAccountCommentDm",
+    "description": "Configure keyword comment-to-DM. Explicitly enable, edit or pause one Instagram keyword rule, account-wide (post_reference=null) or for a signed owned post reference. Costs 0 credits. Whole-word/contains and exceptions use the same Unicode matching as moderation. Rules apply only to original comments created after saving; no historical scan, own-account triggers or reply loops. Defaults disabled. Requires version for optimistic concurrency. Rule changes skip queued old-version jobs. Current owner, connection pin, Coverage, comment age/text and rules are rechecked before sending. Durable resource dedupe and a shared per-account lease prevent duplicate sends. Provider webhooks trigger jobs, normally immediately; a five-minute worker recovers queued work. At most three safe verification or explicit-quota retries. An ambiguous write is never automatically retried. A private reply never authorizes follow-up DMs until the person replies. Read history and subscribe to inbox.comment.automation.updated. Dry-run validates without saving or sending.",
+    "method": "PUT",
+    "path": "/accounts/{id}/inbox/comment-to-dm",
+    "requestContentType": "application/json",
+    "multipartFields": [],
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "format": "uuid",
+          "description": "Saved account ID."
+        },
+        "body": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "enabled",
+            "keywords",
+            "exceptions",
+            "match_mode",
+            "message",
+            "post_reference",
+            "version"
+          ],
+          "properties": {
+            "enabled": {
+              "type": "boolean"
+            },
+            "keywords": {
+              "type": "array",
+              "maxItems": 100,
+              "items": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 80
+              }
+            },
+            "exceptions": {
+              "type": "array",
+              "maxItems": 100,
+              "items": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 80
+              }
+            },
+            "match_mode": {
+              "type": "string",
+              "enum": [
+                "word",
+                "contains"
+              ]
+            },
+            "message": {
+              "type": "string",
+              "maxLength": 1000
+            },
+            "post_reference": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "maxLength": 16000
+            },
+            "version": {
+              "type": "integer",
+              "minimum": 0
+            }
+          },
+          "description": "JSON request body."
+        },
+        "idempotency_key": {
+          "type": "string",
+          "description": "Optional Idempotency-Key header for safe retries."
+        },
+        "dry_run": {
+          "type": "boolean",
+          "description": "Simulate this call: full validation and the real price, but nothing is created, no credits are debited, and no Idempotency-Key is consumed. Returned identifiers are synthetic and only usable in other dry-run calls."
+        }
+      },
+      "required": [
+        "id",
+        "body"
+      ],
+      "additionalProperties": false
+    },
+    "annotations": {
+      "title": "Configure keyword comment-to-DM",
+      "readOnlyHint": false,
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": true
+    }
+  },
+  {
     "name": "tokportal_get_current_user",
     "operationId": "getCurrentUser",
     "description": "Get authenticated user. Returns the authenticated workspace: profile, role, analytics access tier and live credit balance. Call once at the start of a session to learn what this key can do.",
@@ -2691,7 +2996,7 @@ export const TOOLS: McpToolDefinition[] = [
   {
     "name": "tokportal_get_account_inbox",
     "operationId": "getAccountInbox",
-    "description": "Read account messages or comments. Read-only inbox for one owned account with active API connection and eligible TokPortal Coverage. Posts/comments work for eligible Instagram and TikTok connections; conversations/messages require an eligible Instagram professional account (Creator or Business), granted messaging permissions and no current messaging restriction. First list posts or conversations, then pass the returned opaque reference for comments or messages. To read comment replies, keep the post reference and pass the comment's reference as reply_reference. References and pagination cursors expire after one hour and are bound to the account, connection and resource. Refresh the parent list on inbox_reference_expired_or_invalid. Messages are newest first; reading never marks them as read. Comments may be cached upstream for 10 minutes. Replayed Instagram DM history is limited to the latest 500 conversations and 500 messages per conversation. This endpoint does not send, reply, moderate, create automations or charge credits. The separate /comments routes are paid human commenting tasks. Subscribe to inbox.comment.received and inbox.message.received for metadata notifications, then fetch this scoped endpoint. Public replies use POST /accounts/{id}/inbox/replies with reply_action_reference; this GET remains read-only.",
+    "description": "Read account messages or comments. Read-only inbox for one owned account with active API connection and eligible TokPortal Coverage. Posts/comments work for eligible Instagram and TikTok connections; conversations/messages require an eligible Instagram professional account (Creator or Business), granted messaging permissions and no current messaging restriction. First list posts or conversations, then pass the returned opaque reference for comments or messages. To read comment replies, keep the post reference and pass the comment's reference as reply_reference. References and pagination cursors expire after one hour and are bound to the account, connection and resource. Refresh the parent list on inbox_reference_expired_or_invalid. Messages are newest first; reading never marks them as read. Comments may be cached upstream for 10 minutes. Replayed Instagram DM history is limited to the latest 500 conversations and 500 messages per conversation. This endpoint does not send, reply, moderate, create automations or charge credits. The separate /comments routes are paid human commenting tasks. Subscribe to inbox.comment.received and inbox.message.received for metadata notifications, then fetch this scoped endpoint. Public replies use POST /accounts/{id}/inbox/replies with reply_action_reference; this GET remains read-only. Instagram DM writes and private replies use the separate messages/private-replies endpoints; messaging metadata reports the current reply window.",
     "method": "GET",
     "path": "/accounts/{id}/inbox",
     "requestContentType": null,
@@ -3906,6 +4211,9 @@ export const TOOLS: McpToolDefinition[] = [
                   "inbox.message.received",
                   "inbox.comment.reply.updated",
                   "inbox.comment.moderation.updated",
+                  "inbox.message.send.updated",
+                  "inbox.comment.private_reply.updated",
+                  "inbox.comment.automation.updated",
                   "bundle.created",
                   "bundle.published",
                   "bundle.cancelled",
@@ -4045,6 +4353,9 @@ export const TOOLS: McpToolDefinition[] = [
                   "inbox.message.received",
                   "inbox.comment.reply.updated",
                   "inbox.comment.moderation.updated",
+                  "inbox.message.send.updated",
+                  "inbox.comment.private_reply.updated",
+                  "inbox.comment.automation.updated",
                   "bundle.created",
                   "bundle.published",
                   "bundle.cancelled",
