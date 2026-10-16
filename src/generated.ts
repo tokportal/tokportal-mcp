@@ -823,11 +823,6 @@ export const TOOLS: McpToolDefinition[] = [
             "bundle_type"
           ],
           "properties": {
-            "wants_instagram_business": {
-              "type": "boolean",
-              "default": false,
-              "description": "New Instagram accounts only. Adds 5 credits, requests a manager Business setup after creation, and acknowledges restricted commercial music access."
-            },
             "bundle_type": {
               "type": "string",
               "enum": [
@@ -992,11 +987,6 @@ export const TOOLS: McpToolDefinition[] = [
             "accounts_count"
           ],
           "properties": {
-            "wants_instagram_business": {
-              "type": "boolean",
-              "default": false,
-              "description": "Apply Business setup to every new Instagram account only, adding 5 credits each. Requires Instagram in platforms and acknowledges restricted commercial music access."
-            },
             "platforms": {
               "type": "array",
               "minItems": 1,

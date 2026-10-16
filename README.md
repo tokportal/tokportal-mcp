@@ -245,7 +245,7 @@ Use `tokportal_get_analytics_account_insights` with `{ "id": "saved-account-uuid
 
 Read scoped received comments and Instagram messages with `tokportal_get_account_inbox`. Reply publicly with `tokportal_create_account_comment_reply` (0 credits, requires a signed reply capability, stable request key, current Coverage and account quota). Check delivery with `tokportal_get_account_comment_reply`; never blindly resend an unknown result.
 
-`tokportal_get_account_business_setup` reads progression; `tokportal_request_account_business_setup` orders the manager task for 5 credits once per Instagram account, after explicit music-limit acknowledgment. New-account creation tools accept `wants_instagram_business` (+5 credits per new Instagram account). TikTok DMs are unavailable. Public metadata webhooks notify connection, incoming activity, reply result and Business task changes. See the Connection & Inbox guide for contracts and limits.
+`tokportal_get_account_business_setup` reads progression; `tokportal_request_account_business_setup` orders the manager task for 5 credits once per Instagram account, after explicit music-limit acknowledgment. TikTok DMs are unavailable. Public metadata webhooks notify connection, incoming activity, reply result and Business task changes. See the Connection & Inbox guide for contracts and limits.
 
 ### Keyword comment moderation
 
