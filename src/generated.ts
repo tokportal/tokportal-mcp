@@ -3173,6 +3173,116 @@ export const TOOLS: McpToolDefinition[] = [
     }
   },
   {
+    "name": "tokportal_create_account_comment_action",
+    "operationId": "createAccountCommentAction",
+    "description": "Moderate a received comment. Delete, hide, restore visibility, pin or unpin a comment on an owned post. Costs 0 credits. Only use actions returned on that comment by getAccountInbox, with their signed action.reference and the signed post reference. Capabilities are checked again before the write. Instagram supports delete/hide/unhide when allowed; TikTok supports delete/hide and top-level pin/unpin when allowed. TikTok deletion is generally limited to the connected account's own comments/replies. TikTok unhide and comment likes are not exposed in this release. Deletion is permanent and may also remove replies; ask the person using your integration for confirmation before deleting. Requires active Coverage, the current connection and write permission. Reuse the request_key for the same intent, including transport retries. No bulk action or automatic retry of ambiguous results. Honor Retry-After and fetch operation status. Dry-run validates without modifying the platform. A provider acknowledgement is required for succeeded; an HTTP 200 alone is insufficient.",
+    "method": "POST",
+    "path": "/accounts/{id}/inbox/comment-actions",
+    "requestContentType": "application/json",
+    "multipartFields": [],
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "format": "uuid",
+          "description": "Saved account ID."
+        },
+        "body": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "post_reference",
+            "action_reference",
+            "action",
+            "request_key"
+          ],
+          "properties": {
+            "post_reference": {
+              "type": "string",
+              "maxLength": 16000
+            },
+            "action_reference": {
+              "type": "string",
+              "maxLength": 16000
+            },
+            "action": {
+              "type": "string",
+              "enum": [
+                "delete",
+                "hide",
+                "unhide",
+                "pin",
+                "unpin"
+              ]
+            },
+            "request_key": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          "description": "JSON request body."
+        },
+        "idempotency_key": {
+          "type": "string",
+          "description": "Optional Idempotency-Key header for safe retries."
+        },
+        "dry_run": {
+          "type": "boolean",
+          "description": "Simulate this call: full validation and the real price, but nothing is created, no credits are debited, and no Idempotency-Key is consumed. Returned identifiers are synthetic and only usable in other dry-run calls."
+        }
+      },
+      "required": [
+        "id",
+        "body"
+      ],
+      "additionalProperties": false
+    },
+    "annotations": {
+      "title": "Moderate a received comment",
+      "readOnlyHint": false,
+      "destructiveHint": true,
+      "idempotentHint": true,
+      "openWorldHint": true
+    }
+  },
+  {
+    "name": "tokportal_get_account_comment_action",
+    "operationId": "getAccountCommentAction",
+    "description": "Read a comment moderation result. Read an owner-scoped durable action result. pending/unknown never authorizes an automatic resend. Deleted or absent comments alone do not prove this operation succeeded. No comment text is stored in the operation.",
+    "method": "GET",
+    "path": "/accounts/{id}/inbox/comment-actions/{actionId}",
+    "requestContentType": null,
+    "multipartFields": [],
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "format": "uuid",
+          "description": "Saved account ID."
+        },
+        "actionId": {
+          "type": "string",
+          "format": "uuid",
+          "description": "Comment action operation ID."
+        }
+      },
+      "required": [
+        "id",
+        "actionId"
+      ],
+      "additionalProperties": false
+    },
+    "annotations": {
+      "title": "Read a comment moderation result",
+      "readOnlyHint": true,
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false
+    }
+  },
+  {
     "name": "tokportal_create_account_comment_reply",
     "operationId": "createAccountCommentReply",
     "description": "Reply to a received comment. Reply publicly to one received comment on an owned Instagram or TikTok post. Costs 0 credits and never renews Coverage. Requires active Coverage, verified connection and can_reply=true. Fetch posts, then comments; pass the post reference and the comment reply_action_reference. The body request_key UUID must remain identical on an exact retry. Account leases and provider quotas apply; honor Retry-After. A succeeded operation has a reply_id. pending/unknown means delivery is unconfirmed: fetch operation status and the comment thread, never blindly resend. Dry-run validates without sending. TikTok max 150 characters, Instagram max 2200.",
@@ -4200,6 +4310,7 @@ export const TOOLS: McpToolDefinition[] = [
                   "inbox.comment.received",
                   "inbox.message.received",
                   "inbox.comment.reply.updated",
+                  "inbox.comment.action.updated",
                   "inbox.comment.moderation.updated",
                   "inbox.message.send.updated",
                   "inbox.comment.private_reply.updated",
@@ -4342,6 +4453,7 @@ export const TOOLS: McpToolDefinition[] = [
                   "inbox.comment.received",
                   "inbox.message.received",
                   "inbox.comment.reply.updated",
+                  "inbox.comment.action.updated",
                   "inbox.comment.moderation.updated",
                   "inbox.message.send.updated",
                   "inbox.comment.private_reply.updated",

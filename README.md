@@ -25,7 +25,7 @@ Requires Node.js 20 or newer. The local server runs on it directly. Get an API k
 ## 30-second quickstart
 
 ```bash
-npm install -g tokportal-mcp@1.21.0
+npm install -g tokportal-mcp@1.22.0
 TOKPORTAL_API_KEY=sk_your_key_here tokportal-mcp
 ```
 
@@ -200,7 +200,7 @@ The server exposes TokPortal API actions as MCP tools over stdio. It is generate
 - Multipart upload tools are generated from OpenAPI too. Binary fields are exposed as local path inputs such as `file_path`, with the remaining form fields exposed by their schema names.
 - Mutations accept an optional `idempotency_key` (sent as `Idempotency-Key`) except for secret-bearing operations (credential reveal, verification codes, webhook creation, signed upload URLs, report creation) which are never replayed.
 
-The MCP server sends `X-TokPortal-Client: tokportal-mcp/1.21.0` on API requests for observability and support diagnostics.
+The MCP server sends `X-TokPortal-Client: tokportal-mcp/1.22.0` on API requests for observability and support diagnostics.
 
 Failed tool calls return an error result with a `diagnostics` object containing `request_id`, `retry_after_seconds`, and `rate_limit` when those headers are available.
 
@@ -270,3 +270,17 @@ Use `tokportal_get_account_message_operation` for status. A private reply alone
 does not permit follow-up DMs. TikTok DMs are not offered.
 
 Full guide: https://developers.tokportal.com/account-connection-inbox
+
+### Manual comment controls (1.22.0)
+
+`tokportal_create_account_comment_action` supports delete, hide, Instagram unhide
+and TikTok top-level pin/unpin only when returned in the comment's `actions`.
+Pass the exact signed action reference and post reference. Confirm permanent
+deletion with the user first. Costs 0 credits. The server checks permissions,
+Coverage, current connection and provider capabilities before reserving a shared
+account lease. Use a stable `request_key`; use
+`tokportal_get_account_comment_action` after an uncertain result. Never blindly
+repeat pending/unknown writes. `dry_run: true` verifies without modifying comments.
+`inbox.comment.action.updated` contains result metadata only. TikTok unhide and
+likes are not exposed in this release. Wait for `Retry-After`; quotas are not
+safe activity targets and cannot guarantee that an account will not be restricted.
